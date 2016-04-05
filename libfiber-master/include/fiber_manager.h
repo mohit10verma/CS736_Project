@@ -121,6 +121,8 @@ extern mpmc_fifo_node_t* fiber_manager_get_mpmc_node();
 
 extern void fiber_manager_return_mpmc_node(mpmc_fifo_node_t* node);
 
+extern void* fiber_manager_thread_func(void* param);
+
 typedef struct fiber_manager_stats
 {
     uint64_t yield_count;

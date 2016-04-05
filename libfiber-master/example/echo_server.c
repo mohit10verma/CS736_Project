@@ -13,7 +13,7 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-
+#define _GNU_SOURCE
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -21,6 +21,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <pthread.h>
 
 //#include "fiber_manager.h"
 #include "../include/fiber.h"
@@ -34,7 +35,7 @@ int start_server(const char* host, const char* port);
 // we write blocking code and libfiber makes it event driven.
 void* client_function(void* param)
 {
-    const int sock = (int)(intptr_t)param;
+    /*const int sock = (int)(intptr_t)param;
     char buffer[256];
     ssize_t num_read;
     while((num_read = read(sock, buffer, sizeof(buffer))) > 0) {
@@ -43,6 +44,43 @@ void* client_function(void* param)
         }
     }
     close(sock);
+    return NULL;*/
+    pthread_t thread = pthread_self();
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    int j;
+    int temp = 0;
+    for(j = 0; j < 1000000; j++)
+        temp++;
+
+    int s = pthread_getaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
+
+
+    printf("Set returned by pthread_getaffinity_np() contained:\n");
+    for (j = 0; j < CPU_SETSIZE; j++)
+        if (CPU_ISSET(j, &cpuset))
+            printf("CPU %d\n", j);
+
+    printf("\n Hello Client 1");
+    fiber_change(1);
+    //sleep(5);
+    printf("\n Hello Client 2");
+    pthread_t thread1 = pthread_self();
+    CPU_ZERO(&cpuset);
+    int s1 = pthread_getaffinity_np(thread1, sizeof(cpu_set_t), &cpuset);
+
+
+
+    for(j = 0; j < 1000000; j++)
+        temp++;
+
+    printf("Set returned by pthread_getaffinity_np() contained:\n");
+    for (j = 0; j < CPU_SETSIZE; j++)
+        if (CPU_ISSET(j, &cpuset))
+            printf("CPU %d\n", j);
+
+    printf("Value of temp is: %d", temp);
+
     return NULL;
 }
 
@@ -50,7 +88,11 @@ void* client_function(void* param)
 // listening socket. A new fiber is spawned for each client.
 int main()
 {
+
+
+    //printf("\n Hello Client -2");
     fiber_manager_init(4);
+    //printf("\n Hello Client -1");
 
     const char* host = "127.0.0.1";
     const char* port = "10000";
@@ -60,19 +102,25 @@ int main()
     // blocks we will switch fibers. If no fibers are available we'll wait for a new client
     // using epoll_wait (or equivalent). This is all done under the covers - the application
     // writer uses simple, blocking operations.
-    const int server_socket = start_server(host, port);
+    /*const int server_socket = start_server(host, port);
     if(server_socket < 0) {
         printf("failed to create socket. errno: %d\n", errno);
         return errno;
-    }
-
+    }*/
+    //printf("\n Hello Client 0");
+    fiber_t* client_fiber = fiber_create(10240, &client_function, NULL);
+    fiber_t* client_fiber1 = fiber_create(10240, &client_function, NULL);
+    //fiber_detach(client_fiber);
+    fiber_join(client_fiber, NULL);
+    fiber_join(client_fiber1, NULL);
     // Block until a new client appears. Spawn a new fiber for each client.
     int sock;
+    /*
     while((sock = accept(server_socket, NULL, NULL)) >= 0) {
         fiber_t* client_fiber = fiber_create(10240, &client_function, (void*)(intptr_t)sock);
         fiber_detach(client_fiber);
     }
-
+    */
     return 0;
 }
 

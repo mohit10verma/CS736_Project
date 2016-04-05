@@ -14,6 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#define _GNU_SOURCE
 #include "fiber_manager.h"
 #include "fiber_event.h"
 #include "fiber_io.h"
@@ -28,6 +29,7 @@
 #define __USE_GNU
 #endif
 #include <dlfcn.h>
+#include <sched.h>
 #include "lockfree_ring_buffer.h"
 #include "../include/fiber_manager.h"
 #include "../include/fiber_event.h"
@@ -85,7 +87,7 @@ fiber_manager_t* fiber_manager_create(fiber_scheduler_t* scheduler)
     return manager;
 }
 
-static void* fiber_manager_thread_func(void* param);
+//static void* fiber_manager_thread_func(void* param);
 
 static inline void fiber_manager_switch_to(fiber_manager_t* manager, fiber_t* old_fiber, fiber_t* new_fiber)
 {
@@ -181,7 +183,7 @@ fiber_manager_t* fiber_manager_get()
 }
 #endif
 
-static void* fiber_manager_thread_func(void* param)
+void* fiber_manager_thread_func(void* param)
 {
     /* set the thread local, then start running fibers */
 #ifdef USE_COMPILER_THREAD_LOCAL
@@ -194,6 +196,8 @@ static void* fiber_manager_thread_func(void* param)
     }
 #endif
 
+    // TODO: Use sched_setscheduler
+
     splitstack_disable_block_signals();
 
     fiber_manager_t* manager = (fiber_manager_t*)param;
@@ -202,7 +206,7 @@ static void* fiber_manager_thread_func(void* param)
     }
 
     while(!fiber_shutting_down) {
-        fiber_scheduler_load_balance(manager->scheduler);
+        //fiber_scheduler_load_balance(manager->scheduler);
 
         fiber_t* const new_fiber = fiber_scheduler_next(manager->scheduler);
         if(new_fiber) {
@@ -221,6 +225,7 @@ static void* fiber_manager_thread_func(void* param)
 
 int fiber_manager_init(size_t num_threads)
 {
+    //printf("\nINIT");
     splitstack_disable_block_signals();
 
     if(fiber_manager_get_state() != FIBER_MANAGER_STATE_NONE) {
@@ -254,6 +259,15 @@ int fiber_manager_init(size_t num_threads)
 
     fiber_managers[0] = main_manager;
 
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(0, &cpuset);
+    if(pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset)) {
+        assert(0 && "failed to set affinity of kernel thread");
+        abort();
+        return FIBER_ERROR;
+    }
+
     fiber_manager_state = FIBER_MANAGER_STATE_STARTED;
 
     size_t i;
@@ -272,6 +286,14 @@ int fiber_manager_init(size_t num_threads)
         if(pthread_create(&fiber_manager_threads[i], &attr, &fiber_manager_thread_func, fiber_managers[i])) {
             assert(0 && "failed to create kernel thread");
             fiber_manager_state = FIBER_MANAGER_STATE_ERROR;
+            abort();
+            return FIBER_ERROR;
+        }
+        cpu_set_t cpuset;
+        __CPU_ZERO_S(sizeof(cpu_set_t), &cpuset);
+        __CPU_SET_S(i, sizeof(cpu_set_t), &cpuset);
+        if(pthread_setaffinity_np(fiber_manager_threads[i], sizeof(cpu_set_t), &cpuset)) {
+            assert(0 && "failed to set affinity of kernel thread");
             abort();
             return FIBER_ERROR;
         }

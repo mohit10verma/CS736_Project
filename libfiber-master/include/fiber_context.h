@@ -18,6 +18,7 @@
 #define _FIBER_CONTEXT_H_
 
 #include <stddef.h>
+#include <sched.h>
 
 #define FIBER_ERROR (0)
 #define FIBER_SUCCESS (1)
@@ -38,6 +39,7 @@ typedef struct fiber_context
     void** ctx_stack_pointer;
     unsigned int ctx_stack_id;
     int is_thread;
+    size_t cpuset;
 #ifdef FIBER_STACK_SPLIT
     splitstack_context_t splitstack_context;
 #endif
