@@ -24,6 +24,7 @@ extern "C" {
 #endif
 
 typedef void* fiber_scheduler_t;
+//typedef void* fiber_manager_t;
 
 int fiber_scheduler_init(size_t num_threads);
 
@@ -36,6 +37,8 @@ fiber_t* fiber_scheduler_next(fiber_scheduler_t* scheduler);
 void fiber_scheduler_load_balance(fiber_scheduler_t* scheduler);
 
 void fiber_scheduler_stats(fiber_scheduler_t* scheduler, uint64_t* steal_count, uint64_t* failed_steal_count);
+
+void fiber_scheduler_change(struct fiber_manager* manager);
 
 #ifdef __cplusplus
 }

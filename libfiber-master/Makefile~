@@ -1,5 +1,5 @@
 
-all: libfiber.so bin/echo_server
+all: libfiber.so bin/echo_server runtests
 
 VPATH += example src test submodules/libev
 
@@ -17,9 +17,7 @@ CFILES = \
     hazard_pointer.c \
     work_stealing_deque.c \
     work_queue.c \
-    fiber_scheduler_dist.c \
-    #fiber_scheduler_wsd.c \
-    #fiber_scheduler_dist.c \
+    fiber_scheduler_wsd.c \
 
 USE_NATIVE_EVENTS ?= 1
 ifeq ($(USE_NATIVE_EVENTS),1)
@@ -45,7 +43,7 @@ ARCH=x86
 endif
 
 ifeq ($(ARCH),x86_64)
-CFLAGS += -m64 -DARCH_x86_64 -g
+CFLAGS += -m64 -DARCH_x86_64
 endif
 ifeq ($(ARCH),x86)
 CFLAGS += -m32 -march=i686 -DARCH_x86

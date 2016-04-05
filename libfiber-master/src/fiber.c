@@ -238,3 +238,13 @@ int fiber_detach(fiber_t* f)
     return FIBER_SUCCESS;
 }
 
+void fiber_change(size_t index)
+{
+    printf("API\n");
+    fiber_manager_t* manager = fiber_manager_get();
+    fiber_t* current_fiber = manager->current_fiber;
+    current_fiber->context.cpuset = index;
+//    fflush(stdout);
+    fiber_scheduler_change(manager);
+}
+
