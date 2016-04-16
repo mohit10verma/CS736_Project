@@ -164,7 +164,7 @@ static inline void fiber_manager_switch_to(struct fiber_manager* manager, fiber_
     fiber_context_swap(&old_fiber->context, &new_fiber->context);
 }
 
-void fiber_scheduler_change(struct fiber_manager* manager)
+void fiber_scheduler_change(struct fiber_manager* manager, size_t index)
 {
     printf("WSD\n");
     //TODO: make cpuset an array of CPU lists. Optimize if current queue is the same as cpuset
@@ -177,7 +177,7 @@ void fiber_scheduler_change(struct fiber_manager* manager)
     assert(current_fiber);
     mpsc_fifo_node_t* const node = current_fiber->mpsc_fifo_node;
     assert(node);
-    current_fiber->mpsc_fifo_node = NULL;
+//current_fiber->mpsc_fifo_node = NULL;
     node->data = current_fiber;
 
     wsd_work_stealing_deque_push_bottom(remote_queue->schedule_from, current_fiber);
@@ -208,4 +208,9 @@ void fiber_scheduler_change(struct fiber_manager* manager)
 
     }
 
+}
+
+void schedule_fiber(fiber_t* the_fiber)
+{
+    int i = 0;
 }

@@ -14,7 +14,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define _GNU_SOURCE
 #include "fiber.h"
 #include "fiber_manager.h"
 #include "mpmc_lifo.h"
@@ -25,8 +24,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <unistd.h>
-#include <limits.h>
-static int counter = 0;
+
 void fiber_join_routine(fiber_t* the_fiber, void* result)
 {
     the_fiber->result = result;
@@ -36,8 +34,7 @@ void fiber_join_routine(fiber_t* the_fiber, void* result)
         const int old_state = atomic_exchange_int((int*)&the_fiber->detach_state, FIBER_DETACH_WAIT_FOR_JOINER);
         if(old_state == FIBER_DETACH_NONE) {
             //need to wait until another fiber joins this one
-            fiber_manager_t* fiberM = fiber_manager_get();
-            fiber_manager_set_and_wait(fiberM, (void**)&the_fiber->join_info, the_fiber);
+            fiber_manager_set_and_wait(fiber_manager_get(), (void**)&the_fiber->join_info, the_fiber);
         } else if(old_state == FIBER_DETACH_WAIT_TO_JOIN) {
             //the joining fiber is waiting for us to finish
             fiber_t* const to_schedule = fiber_manager_clear_or_wait(fiber_manager_get(), (void**)&the_fiber->join_info);
@@ -50,7 +47,6 @@ void fiber_join_routine(fiber_t* the_fiber, void* result)
     the_fiber->state = FIBER_STATE_DONE;
 
     fiber_manager_get()->done_fiber = the_fiber;
-    printf("Exited\n");
     fiber_manager_yield(fiber_manager_get());
     assert(0 && "should never get here");
 }
@@ -58,7 +54,6 @@ void fiber_join_routine(fiber_t* the_fiber, void* result)
 #ifdef FIBER_STACK_SPLIT
 __attribute__((__no_split_stack__))
 #endif
-
 static void* fiber_go_function(void* param)
 {
     fiber_t* the_fiber = (fiber_t*)param;
@@ -68,9 +63,6 @@ static void* fiber_go_function(void* param)
 
     void* const result = the_fiber->run_function(the_fiber->param);
 
-    counter++;
-    printf("In fiber go func %d\n", counter);
-    //fiber_shutdown();
     fiber_join_routine(the_fiber, result);
 
     return NULL;
@@ -78,7 +70,7 @@ static void* fiber_go_function(void* param)
 
 mpmc_lifo_t fiber_free_fibers = MPMC_LIFO_INITIALIZER;
 
-fiber_t* fiber_create_no_sched(size_t stack_size, fiber_run_function_t run_function, void* param)
+fiber_t* fiber_ceate_no_sched(size_t stack_size, fiber_run_function_t run_function, void* param)
 {
     mpsc_fifo_node_t* const node = mpmc_lifo_pop(&fiber_free_fibers);
     fiber_t* ret = NULL;
@@ -122,10 +114,7 @@ fiber_t* fiber_create(size_t stack_size, fiber_run_function_t run_function, void
 {
     fiber_t* const ret = fiber_create_no_sched(stack_size, run_function, param);
     if(ret) {
-        //TODO: remove hardcoded thread count
-        //printf("Before schedule\n");
-        fiber_schedule(ret);
-        //printf("After schedule\n");
+        fiber_manager_schedule(fiber_manager_get(), ret);
     }
     return ret;
 }
@@ -157,7 +146,6 @@ fiber_t* fiber_create_from_thread()
 }
 
 #include <stdio.h>
-#include <pthread.h>
 
 int fiber_join(fiber_t* f, void** result)
 {
@@ -252,16 +240,11 @@ int fiber_detach(fiber_t* f)
 
 void fiber_change(size_t index)
 {
-    //printf("API\n");
-    cpu_set_t cpuset;
-    CPU_ZERO(&cpuset);
-    int s1 = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-    if(CPU_ISSET(index, &cpuset))
-        return;
+    printf("API\n");
     fiber_manager_t* manager = fiber_manager_get();
     fiber_t* current_fiber = manager->current_fiber;
-    //current_fiber->context.cpuset = index;
+    current_fiber->context.cpuset = index;
 //    fflush(stdout);
-    fiber_scheduler_change(manager, index);
+    fiber_scheduler_change(manager);
 }
 

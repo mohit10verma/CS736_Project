@@ -130,9 +130,9 @@ void fiber_manager_yield(fiber_manager_t* manager)
             manager = fiber_manager_get();
         } else {
             //occasionally steal some work from threads with more load
-            if((manager->yield_count & 1023) == 0) {
+            /*if((manager->yield_count & 1023) == 0) {
                 fiber_scheduler_load_balance(manager->scheduler);
-            }
+            }*/
             break;
         }
     }
@@ -270,7 +270,7 @@ int fiber_manager_init(size_t num_threads)
 
     fiber_manager_state = FIBER_MANAGER_STATE_STARTED;
 
-    size_t i;
+    int i;
     for(i = 1; i < num_threads; ++i) {
         fiber_manager_t* const new_manager = fiber_manager_create(fiber_scheduler_for_thread(i));
         assert(new_manager);
@@ -290,8 +290,8 @@ int fiber_manager_init(size_t num_threads)
             return FIBER_ERROR;
         }
         cpu_set_t cpuset;
-        __CPU_ZERO_S(sizeof(cpu_set_t), &cpuset);
-        __CPU_SET_S(i, sizeof(cpu_set_t), &cpuset);
+        CPU_ZERO(&cpuset);
+        CPU_SET(i/3, &cpuset);
         if(pthread_setaffinity_np(fiber_manager_threads[i], sizeof(cpu_set_t), &cpuset)) {
             assert(0 && "failed to set affinity of kernel thread");
             abort();
@@ -467,9 +467,11 @@ int fiber_manager_wake_from_mpsc_queue(fiber_manager_t* manager, mpsc_fifo_t* fi
     } while(wake_count < count);
     return wake_count;
 }
-
+static int i=0;
 void fiber_manager_set_and_wait(fiber_manager_t* manager, void** location, void* value)
 {
+
+    printf("Call no. of this func: set and wiait: %d\n",i++);
     assert(manager);
     assert(location);
     assert(value);
@@ -483,11 +485,15 @@ void fiber_manager_set_and_wait(fiber_manager_t* manager, void** location, void*
 
 void* fiber_manager_clear_or_wait(fiber_manager_t* manager, void** location)
 {
+
     assert(manager);
     assert(location);
+    printf("Call no. of this func: clear or wait: %d\n",i++);
     while(1) {
         void* const ret = atomic_exchange_pointer(location, NULL);
+
         if(ret) {
+            printf("join info %x\n",((int*)ret));
             return ret;
         }
         fiber_manager_yield(manager);
@@ -587,3 +593,7 @@ void fiber_manager_all_stats(fiber_manager_stats_t* out)
     }
 }
 
+fiber_manager_t* get_fiber_manager(int i)
+{
+    return fiber_managers[i];
+}

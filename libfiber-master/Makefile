@@ -18,8 +18,6 @@ CFILES = \
     work_stealing_deque.c \
     work_queue.c \
     fiber_scheduler_dist.c \
-    #fiber_scheduler_wsd.c \
-    #fiber_scheduler_dist.c \
 
 USE_NATIVE_EVENTS ?= 1
 ifeq ($(USE_NATIVE_EVENTS),1)
@@ -45,13 +43,13 @@ ARCH=x86
 endif
 
 ifeq ($(ARCH),x86_64)
-CFLAGS += -m64 -DARCH_x86_64 -g
+CFLAGS += -m64 -DARCH_x86_64
 endif
 ifeq ($(ARCH),x86)
 CFLAGS += -m32 -march=i686 -DARCH_x86
 endif
 
-CFLAGS += -pthread -Wall -Iinclude -Isubmodules/libev -D_REENTRANT -ggdb -O3
+CFLAGS += -pthread -Wall -Iinclude -Isubmodules/libev -D_REENTRANT -ggdb -O0
 
 #don't use split-stack on gcc 4.6 since it doesn't implement getcontext, setcontext, or makecontext
 GCC46 = $(shell $(CC) -v 2>&1 | grep "gcc.*4.6" > /dev/null; echo $$?)

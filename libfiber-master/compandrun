@@ -4,3 +4,4 @@ make
 cd example
 gcc -c -g echo_server.c -m64 -DARCH_x86_64 -fPIC
 gcc -o test echo_server.o ../libfiber.so 
+#cd example/

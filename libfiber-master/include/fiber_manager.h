@@ -78,6 +78,11 @@ static inline void fiber_manager_schedule(fiber_manager_t* manager, fiber_t* the
     fiber_scheduler_schedule(manager->scheduler, the_fiber);
 }
 
+static inline void fiber_schedule(fiber_t* the_fiber)
+{
+    schedule_fiber(the_fiber);
+}
+
 extern void fiber_manager_yield(fiber_manager_t* manager);
 
 extern fiber_manager_t* fiber_manager_get();
@@ -143,6 +148,8 @@ extern void fiber_manager_stats(fiber_manager_t* manager, fiber_manager_stats_t*
 
 //stats are *added* to the values currently in *out
 extern void fiber_manager_all_stats(fiber_manager_stats_t* out);
+
+extern fiber_manager_t* get_fiber_manager(int i);
 
 #ifdef __cplusplus
 }

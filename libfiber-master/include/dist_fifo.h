@@ -58,6 +58,7 @@ typedef struct dist_fifo
     volatile dist_fifo_pointer_wrapper_t __attribute__ ((__aligned__(2 * sizeof(void*)))) head;//volatile is required to prevent compiler optimizations. true story.
     char _cache_padding1[CACHE_SIZE - sizeof(dist_fifo_pointer_wrapper_t)];
     dist_fifo_node_t* tail;
+    uintptr_t qsize;
     char _cache_padding2[CACHE_SIZE - sizeof(dist_fifo_node_t*)];
 } __attribute__((__packed__)) dist_fifo_t;
 
@@ -67,10 +68,11 @@ static inline int dist_fifo_init(dist_fifo_t* fifo)
     assert(sizeof(dist_fifo_pointer_wrapper_t) == 2 * sizeof(void*));
     assert(sizeof(dist_fifo_pointer_t) == sizeof(pointer_pair_t));
     assert((uintptr_t)fifo % (2 * sizeof(void*)) == 0);//alignment (TODO: need a better solution than this. perhaps allocate the memory for the fifo here)
-    assert(sizeof(dist_fifo_t) == 2 * CACHE_SIZE);
+    //assert(sizeof(dist_fifo_t) == 2 * CACHE_SIZE);
     memset((void*)&fifo->head, 0, sizeof(fifo->head));
     fifo->tail = (dist_fifo_node_t*)calloc(1, sizeof(*fifo->tail));
     fifo->head.pointer.node = fifo->tail;
+    fifo->qsize = 0;
     if(!fifo->tail) {
         return 0;
     }
@@ -85,6 +87,7 @@ static inline void dist_fifo_destroy(dist_fifo_t* fifo)
             fifo->head.pointer.node = tmp->next;
             free(tmp);
         }
+        fifo->qsize = 0;
     }
 }
 
@@ -97,6 +100,7 @@ static inline void dist_fifo_push(dist_fifo_t* fifo, dist_fifo_node_t* new_node)
     write_barrier();//the node must be terminated before it's visible to the reader as the new tail
     tail->next = new_node;
     fifo->tail = new_node;
+    fifo->qsize++;
 }
 
 #define DIST_FIFO_EMPTY ((dist_fifo_node_t*)(0))
@@ -122,6 +126,7 @@ static inline dist_fifo_node_t* dist_fifo_trypop(dist_fifo_t* fifo)
             return DIST_FIFO_RETRY;
         }
         prev_head->data = data;
+        fifo->qsize--;
         return prev_head;
     }
     return DIST_FIFO_EMPTY;

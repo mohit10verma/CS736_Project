@@ -28,6 +28,8 @@
 #include "../include/fiber_manager.h"
 
 int start_server(const char* host, const char* port);
+int volatile counter = 0;
+fiber_mutex_t mutex;
 
 // This function reads data from a socket and echos it back. Both read() and write()
 // operations will block within the context of this function. The fiber runtime will
@@ -35,6 +37,8 @@ int start_server(const char* host, const char* port);
 // we write blocking code and libfiber makes it event driven.
 void* client_function(void* param)
 {
+  //while(1)
+  //printf("Hello from %d", *((int*)param));
     /*const int sock = (int)(intptr_t)param;
     char buffer[256];
     ssize_t num_read;
@@ -45,6 +49,9 @@ void* client_function(void* param)
     }
     close(sock);
     return NULL;*/
+
+    ++counter;
+
     pthread_t thread = pthread_self();
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
@@ -56,15 +63,18 @@ void* client_function(void* param)
     int s = pthread_getaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
 
 
-    printf("Set returned by pthread_getaffinity_np() contained:\n");
+    /*printf("Set returned by pthread_getaffinity_np() contained:\n");
     for (j = 0; j < CPU_SETSIZE; j++)
         if (CPU_ISSET(j, &cpuset))
             printf("CPU %d\n", j);
 
-    printf("\n Hello Client 1");
-    fiber_change(1);
+    printf("Hello Client 1\n");*/
+    fiber_change(3);
+    /*while(1){
+      printf("Hello from %d\n", *((int*)param));
+    }*/
     //sleep(5);
-    printf("\n Hello Client 2");
+    //printf("Hello Client 2\n");
     pthread_t thread1 = pthread_self();
     CPU_ZERO(&cpuset);
     int s1 = pthread_getaffinity_np(thread1, sizeof(cpu_set_t), &cpuset);
@@ -74,12 +84,14 @@ void* client_function(void* param)
     for(j = 0; j < 1000000; j++)
         temp++;
 
-    printf("Set returned by pthread_getaffinity_np() contained:\n");
-    for (j = 0; j < CPU_SETSIZE; j++)
+    /*printf("Set returned by pthread_getaffinity_np() contained:\n");
+    for (j = 0; j < CPU_SETSIZE; j++) {
+        //printf("in CPU\n");
         if (CPU_ISSET(j, &cpuset))
             printf("CPU %d\n", j);
+    }
 
-    printf("Value of temp is: %d", temp);
+    printf("Value of temp is: %d\n", temp);*/
 
     return NULL;
 }
@@ -91,7 +103,7 @@ int main()
 
 
     //printf("\n Hello Client -2");
-    fiber_manager_init(4);
+    fiber_manager_init(12);
     //printf("\n Hello Client -1");
 
     const char* host = "127.0.0.1";
@@ -108,11 +120,21 @@ int main()
         return errno;
     }*/
     //printf("\n Hello Client 0");
-    fiber_t* client_fiber = fiber_create(10240, &client_function, NULL);
-    fiber_t* client_fiber1 = fiber_create(10240, &client_function, NULL);
-    //fiber_detach(client_fiber);
-    fiber_join(client_fiber, NULL);
-    fiber_join(client_fiber1, NULL);
+    int i;
+    fiber_t *client_fiber[100];
+
+    for(i = 0; i < 9; i++) {
+        client_fiber[i] = fiber_create(10240, &client_function, NULL);
+    }
+
+    //fiber_do_real_sleep(10, 0);
+    //printf("Global count %d\n", counter);
+    for(i = 0; i < 9; i++) {
+        printf("From main: %d join successful\n",i);
+        fiber_join(client_fiber[i], NULL);
+    }
+
+    printf("In main fiber now\n");
     // Block until a new client appears. Spawn a new fiber for each client.
     int sock;
     /*
