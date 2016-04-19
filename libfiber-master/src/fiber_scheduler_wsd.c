@@ -57,7 +57,7 @@ int fiber_scheduler_wsd_init(fiber_scheduler_wsd_t* scheduler, size_t id)
     return 1;
 }
 
-int fiber_scheduler_init(size_t num_threads)
+int fiber_scheduler_init(size_t num_threads, size_t per_cpu_threads)
 {
     assert(num_threads > 0);
     fiber_scheduler_num_threads = num_threads;

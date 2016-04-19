@@ -33,6 +33,7 @@ typedef struct fiber_scheduler_dist
 } fiber_scheduler_dist_t;
 
 static size_t fiber_scheduler_num_threads = 0;
+static size_t num_threads_per_cpu = 0;
 static fiber_scheduler_dist_t* fiber_schedulers = NULL;
 
 int fiber_scheduler_dist_init(fiber_scheduler_dist_t* scheduler, size_t id)
@@ -47,10 +48,11 @@ int fiber_scheduler_dist_init(fiber_scheduler_dist_t* scheduler, size_t id)
     return 1;
 }
 
-int fiber_scheduler_init(size_t num_threads)
+int fiber_scheduler_init(size_t num_threads, size_t per_cpu_threads)
 {
     assert(num_threads > 0);
     fiber_scheduler_num_threads = num_threads;
+    num_threads_per_cpu = per_cpu_threads;
 
     fiber_schedulers = calloc(num_threads, sizeof(*fiber_schedulers));
     assert(fiber_schedulers);
@@ -75,7 +77,9 @@ void fiber_scheduler_schedule(fiber_scheduler_t* scheduler, fiber_t* the_fiber)
 {
     assert(scheduler);
     assert(the_fiber);
+    //while(!the_fiber->mpsc_fifo_node);
     mpsc_fifo_node_t* const node = the_fiber->mpsc_fifo_node;
+    printf("%x fiber is scheduled\n", the_fiber);
     assert(node);
     the_fiber->mpsc_fifo_node = NULL;
     node->data = the_fiber;
@@ -153,7 +157,7 @@ void fiber_scheduler_change(struct fiber_manager* manager, size_t index)
 {
     //printf("\n DIST");
     int j, minind = 0, mincnt = INT_MAX;
-    for(j = 3*index; j < 3*(index+1); j++) {
+    for(j = num_threads_per_cpu*index; j < num_threads_per_cpu*(index+1); j++) {
         uintptr_t cnt = 0;
         fiber_scheduler_t *scheduler = get_fiber_manager(j)->scheduler;
         cnt = ((fiber_scheduler_dist_t *) scheduler)->queue.qsize;
@@ -206,9 +210,9 @@ void fiber_scheduler_change(struct fiber_manager* manager, size_t index)
 void schedule_fiber(fiber_t* the_fiber)
 {
     int minind = 0, mincnt = INT_MAX, i, j;
-    for(i = 0; i < fiber_scheduler_num_threads/3; i++){
+    for(i = 0; i < fiber_scheduler_num_threads/num_threads_per_cpu; i++){
         uintptr_t cnt = 0;
-        for(j = 3*i; j < 3*(i+1); j++) {
+        for(j = num_threads_per_cpu*i; j < num_threads_per_cpu*(i+1); j++) {
             fiber_scheduler_t *scheduler = get_fiber_manager(j)->scheduler;
             cnt += ((fiber_scheduler_dist_t *) scheduler)->queue.qsize;
             if(get_fiber_manager(j)->current_fiber->state == FIBER_STATE_RUNNING)
@@ -222,7 +226,7 @@ void schedule_fiber(fiber_t* the_fiber)
     i = minind;
     minind = 0;
     mincnt = INT_MAX;
-    for(j = 3*i; j < 3*(i+1); j++) {
+    for(j = num_threads_per_cpu*i; j < num_threads_per_cpu*(i+1); j++) {
         uintptr_t cnt = 0;
         fiber_scheduler_t *scheduler = get_fiber_manager(j)->scheduler;
         cnt = ((fiber_scheduler_dist_t *) scheduler)->queue.qsize;
@@ -233,7 +237,7 @@ void schedule_fiber(fiber_t* the_fiber)
             mincnt = cnt;
         }
     }
-    //printf("%d\n",minind);
+    printf("%x fiber Scheduled on %d\n",the_fiber,minind);
     the_fiber->context.cpuset = minind+1;
     fiber_scheduler_schedule(get_fiber_manager(minind)->scheduler, the_fiber);
 }

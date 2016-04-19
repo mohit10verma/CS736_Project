@@ -50,7 +50,7 @@ void* client_function(void* param)
     close(sock);
     return NULL;*/
 
-    
+    ++counter;
 
     pthread_t thread = pthread_self();
     cpu_set_t cpuset;
@@ -70,8 +70,7 @@ void* client_function(void* param)
 
     printf("Hello Client 1\n");*/
     fiber_change(3);
-    /*
-    while(1){
+    /*while(1){
       printf("Hello from %d\n", *((int*)param));
     }*/
     //sleep(5);
@@ -93,7 +92,6 @@ void* client_function(void* param)
     }
 
     printf("Value of temp is: %d\n", temp);
-	++counter;
 
     return NULL;
 }
@@ -105,7 +103,7 @@ int main()
 
 
     //printf("\n Hello Client -2");
-    fiber_manager_init(60);
+    fiber_manager_init(12);
     //printf("\n Hello Client -1");
 
     const char* host = "127.0.0.1";
@@ -126,10 +124,8 @@ int main()
     fiber_t *client_fiber[100];
 
     for(i = 0; i < 100; i++) {
-    int a = 1;
-        client_fiber[i] = fiber_create(10240, &client_function, &a);
-
-	}
+        client_fiber[i] = fiber_create(10240, &client_function, NULL);
+    }
 
     //fiber_do_real_sleep(10, 0);
     //printf("Global count %d\n", counter);

@@ -26,7 +26,7 @@ extern "C" {
 typedef void* fiber_scheduler_t;
 //typedef void* fiber_manager_t;
 
-int fiber_scheduler_init(size_t num_threads);
+int fiber_scheduler_init(size_t num_threads, size_t per_cpu_threads);
 
 fiber_scheduler_t* fiber_scheduler_for_thread(size_t thread_id);
 

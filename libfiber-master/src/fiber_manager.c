@@ -54,6 +54,7 @@ void splitstack_disable_block_signals()
 
 static int fiber_manager_state = FIBER_MANAGER_STATE_NONE;
 static int fiber_manager_num_threads = 0;
+static int num_threads_per_cpu = 0;
 static pthread_t* fiber_manager_threads = NULL;
 static fiber_manager_t** fiber_managers = NULL;
 static volatile int fiber_shutting_down = 0;
@@ -232,8 +233,8 @@ int fiber_manager_init(size_t num_threads)
         errno = EINVAL;
         return FIBER_ERROR;
     }
-
-    const int sched_ret = fiber_scheduler_init(num_threads);
+    num_threads_per_cpu = num_threads/sysconf(_SC_NPROCESSORS_ONLN);
+    const int sched_ret = fiber_scheduler_init(num_threads, num_threads_per_cpu);
     if(!sched_ret) {
         return FIBER_ERROR;
     }
@@ -245,6 +246,8 @@ int fiber_manager_init(size_t num_threads)
     assert(fiber_managers);
 
     fiber_manager_t* const main_manager = fiber_manager_create(fiber_scheduler_for_thread(0));
+    //printf("%x fiber created for manager 0\n", main_manager->thread_fiber);
+    //main_manager->thread_fiber->context.cpuset = 1;
     assert(main_manager);
 
 #ifdef USE_COMPILER_THREAD_LOCAL
@@ -273,6 +276,8 @@ int fiber_manager_init(size_t num_threads)
     int i;
     for(i = 1; i < num_threads; ++i) {
         fiber_manager_t* const new_manager = fiber_manager_create(fiber_scheduler_for_thread(i));
+        //printf("%x fiber created for manager %d\n", main_manager->thread_fiber, i);
+        //new_manager->thread_fiber->context.cpuset = i+1;
         assert(new_manager);
         new_manager->id = i;
         fiber_managers[i] = new_manager;
@@ -291,7 +296,7 @@ int fiber_manager_init(size_t num_threads)
         }
         cpu_set_t cpuset;
         CPU_ZERO(&cpuset);
-        CPU_SET(i/3, &cpuset);
+        CPU_SET(i/num_threads_per_cpu, &cpuset);
         if(pthread_setaffinity_np(fiber_manager_threads[i], sizeof(cpu_set_t), &cpuset)) {
             assert(0 && "failed to set affinity of kernel thread");
             abort();
@@ -307,6 +312,8 @@ int fiber_manager_init(size_t num_threads)
     if(!fiber_event_init()) {
         return FIBER_ERROR;
     }
+    printf("%x is parent fiber\n", fiber_manager_get()->current_fiber);
+    fiber_manager_get()->current_fiber->context.cpuset = 1;
 
     return FIBER_SUCCESS;
 }
@@ -493,7 +500,7 @@ void* fiber_manager_clear_or_wait(fiber_manager_t* manager, void** location)
         void* const ret = atomic_exchange_pointer(location, NULL);
 
         if(ret) {
-            printf("join info %x\n",((int*)ret));
+            printf("join info %x for fiber %x\n",((fiber_t*)ret), manager->current_fiber);
             return ret;
         }
         fiber_manager_yield(manager);

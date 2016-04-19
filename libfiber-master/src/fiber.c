@@ -184,7 +184,8 @@ int fiber_join(fiber_t* f, void** result)
         if(result) { 
             *result = f->result;
         }
-        fiber_t* const to_schedule = fiber_manager_clear_or_wait(fiber_manager_get(), (void**)&f->join_info);
+        //fiber_t* const to_schedule = fiber_manager_clear_or_wait(fiber_manager_get(), (void**)&f->join_info);
+        fiber_t* const to_schedule = fiber_manager_clear_or_wait(fiber_manager_get(), (void**)&f);
         to_schedule->state = FIBER_STATE_READY;
         fiber_manager_schedule(fiber_manager_get(), to_schedule);
     } else {

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+git add *
+git commit -m "join bug fixed" 
+git push origin unmesh
