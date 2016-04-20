@@ -47,6 +47,7 @@ typedef struct fiber
     mpsc_fifo_node_t* volatile mpsc_fifo_node;
     int volatile detach_state;
     struct fiber* volatile join_info;
+    struct fiber* parent_fiber;
     void* volatile scratch;//to be used by internal fiber mechanisms. be sure mechanisms do not conflict! (ie. only use scratch while a fiber is sleeping/waiting)
 } fiber_t;
 

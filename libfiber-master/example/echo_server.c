@@ -35,8 +35,15 @@ fiber_mutex_t mutex;
 // operations will block within the context of this function. The fiber runtime will
 // intercept calls to read() or write and switch fibers if they will block. Basically,
 // we write blocking code and libfiber makes it event driven.
+void* printhello(){
+    printf("Hello\n");
+    return NULL;
+}
 void* client_function(void* param)
 {
+    fiber_t* client;
+    client = fiber_create(10240, &printhello, NULL);
+    fiber_join(client, NULL);
   //while(1)
   //printf("Hello from %d", *((int*)param));
     /*const int sock = (int)(intptr_t)param;
@@ -69,7 +76,7 @@ void* client_function(void* param)
             printf("CPU %d\n", j);
 
     printf("Hello Client 1\n");*/
-    fiber_change(3);
+    //fiber_change(0);
     /*
     while(1){
       printf("Hello from %d\n", *((int*)param));
@@ -105,7 +112,9 @@ int main()
 
 
     //printf("\n Hello Client -2");
-    fiber_manager_init(60);
+    int matrix[1][4];
+    matrix[0][0] = matrix[0][1] = matrix[0][2] = matrix[0][3] = 4;
+    fiber_manager_init(12, (int *)matrix, 1, 4);
     //printf("\n Hello Client -1");
 
     const char* host = "127.0.0.1";

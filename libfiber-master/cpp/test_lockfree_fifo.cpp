@@ -40,7 +40,7 @@ struct blah
         //std::cout << "blah(const blah&) " << x << std::endl;
     }
 
-    blah(blah&&)
+    blah(blah&&)z
     : x(y++)
     {
         //std::cout << "blah(blah&&) " << x << std::endl;

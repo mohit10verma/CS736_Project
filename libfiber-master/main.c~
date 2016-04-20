@@ -1,0 +1,8 @@
+#include<stdio.h>
+
+void f(int);
+    int main()
+    {
+        f(2);
+        /* ... */
+    }

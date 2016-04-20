@@ -155,7 +155,6 @@ static inline void fiber_manager_switch_to(struct fiber_manager* manager, fiber_
 
 void fiber_scheduler_change(struct fiber_manager* manager, size_t index)
 {
-    //printf("\n DIST");
     int j, minind = 0, mincnt = INT_MAX;
     for(j = num_threads_per_cpu*index; j < num_threads_per_cpu*(index+1); j++) {
         uintptr_t cnt = 0;
@@ -176,7 +175,7 @@ void fiber_scheduler_change(struct fiber_manager* manager, size_t index)
     fiber_t* current_fiber = manager->current_fiber;
     current_fiber->context.cpuset = minind+1;
     dist_fifo_t* remote_queue = &fiber_schedulers[minind].queue;
-    if(current_fiber->state == FIBER_STATE_RUNNING) {
+    if(current_fiber->state == FIBER_STATE_RUNNING || current_fiber->state == FIBER_STATE_WAITING) {
         current_fiber->state = FIBER_STATE_READY;
 //        manager->to_schedule = old_fiber;
     }
@@ -215,7 +214,7 @@ void schedule_fiber(fiber_t* the_fiber)
         for(j = num_threads_per_cpu*i; j < num_threads_per_cpu*(i+1); j++) {
             fiber_scheduler_t *scheduler = get_fiber_manager(j)->scheduler;
             cnt += ((fiber_scheduler_dist_t *) scheduler)->queue.qsize;
-            if(get_fiber_manager(j)->current_fiber->state == FIBER_STATE_RUNNING)
+            if((get_fiber_manager(j)->current_fiber->state == FIBER_STATE_RUNNING) || (get_fiber_manager(j)->current_fiber->state == FIBER_STATE_WAITING))
                 cnt++;
         }
         if(mincnt > cnt) {
@@ -230,7 +229,7 @@ void schedule_fiber(fiber_t* the_fiber)
         uintptr_t cnt = 0;
         fiber_scheduler_t *scheduler = get_fiber_manager(j)->scheduler;
         cnt = ((fiber_scheduler_dist_t *) scheduler)->queue.qsize;
-        if(get_fiber_manager(j)->current_fiber->state == FIBER_STATE_RUNNING)
+        if(get_fiber_manager(j)->current_fiber->state == FIBER_STATE_RUNNING || get_fiber_manager(j)->current_fiber->state == FIBER_STATE_WAITING)
             cnt++;
         if(mincnt > cnt) {
             minind = j;

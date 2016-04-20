@@ -1,5 +1,5 @@
 
-all: libfiber.so bin/echo_server runtests
+all: libfiber.so bin/echo_server
 
 VPATH += example src test submodules/libev
 
@@ -17,7 +17,7 @@ CFILES = \
     hazard_pointer.c \
     work_stealing_deque.c \
     work_queue.c \
-    fiber_scheduler_wsd.c \
+    fiber_scheduler_dist.c \
 
 USE_NATIVE_EVENTS ?= 1
 ifeq ($(USE_NATIVE_EVENTS),1)
@@ -49,7 +49,7 @@ ifeq ($(ARCH),x86)
 CFLAGS += -m32 -march=i686 -DARCH_x86
 endif
 
-CFLAGS += -pthread -Wall -Iinclude -Isubmodules/libev -D_REENTRANT -ggdb -O3
+CFLAGS += -pthread -Wall -Iinclude -Isubmodules/libev -D_REENTRANT -ggdb -O0
 
 #don't use split-stack on gcc 4.6 since it doesn't implement getcontext, setcontext, or makecontext
 GCC46 = $(shell $(CC) -v 2>&1 | grep "gcc.*4.6" > /dev/null; echo $$?)
@@ -158,7 +158,7 @@ INCLUDES = $(wildcard include/*.h)
 TESTINCLUDES = $(wildcard test/*.h)
 
 libfiber.so: $(PICOBJS)
-	$(CC) $(LINKER_SHARED_FLAG) $(LDFLAGS) $(CFLAGS) $^ -o $@ $(LDFLAGSAFTER)
+	g++ $(LINKER_SHARED_FLAG) $(LDFLAGS) $(CFLAGS) $^ -o $@ $(LDFLAGSAFTER)
 
 bin/libfiber.so: libfiber.so
 	cp $^ $@

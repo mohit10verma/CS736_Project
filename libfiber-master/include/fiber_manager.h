@@ -88,7 +88,7 @@ extern void fiber_manager_yield(fiber_manager_t* manager);
 extern fiber_manager_t* fiber_manager_get();
 
 /* this should be called immediately when the applicaion starts */
-extern int fiber_manager_init(size_t num_threads);
+extern int fiber_manager_init(size_t num_threads, int* matrix, int m, int n);
 
 extern void fiber_shutdown();
 
@@ -150,6 +150,10 @@ extern void fiber_manager_stats(fiber_manager_t* manager, fiber_manager_stats_t*
 extern void fiber_manager_all_stats(fiber_manager_stats_t* out);
 
 extern fiber_manager_t* get_fiber_manager(int i);
+
+extern fiber_t* get_parent_fiber();
+
+extern int **feat_mat;
 
 #ifdef __cplusplus
 }

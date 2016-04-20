@@ -40,7 +40,8 @@ void fiber_join_routine(fiber_t* the_fiber, void* result)
             fiber_manager_set_and_wait(fiberM, (void**)&the_fiber->join_info, the_fiber);
         } else if(old_state == FIBER_DETACH_WAIT_TO_JOIN) {
             //the joining fiber is waiting for us to finish
-            fiber_t* const to_schedule = fiber_manager_clear_or_wait(fiber_manager_get(), (void**)&the_fiber->join_info);
+            fiber_t* parent_fiber = get_parent_fiber();
+            fiber_t* const to_schedule = fiber_manager_clear_or_wait(fiber_manager_get(), (void**)&the_fiber->parent_fiber);
             to_schedule->result = the_fiber->result;
             to_schedule->state = FIBER_STATE_READY;
             fiber_manager_schedule(fiber_manager_get(), to_schedule);
@@ -125,6 +126,7 @@ fiber_t* fiber_create(size_t stack_size, fiber_run_function_t run_function, void
         //TODO: remove hardcoded thread count
         //printf("Before schedule\n");
         fiber_schedule(ret);
+        ret->parent_fiber = fiber_manager_get()->current_fiber;
         //printf("After schedule\n");
     }
     return ret;
