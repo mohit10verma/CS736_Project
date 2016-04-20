@@ -17,6 +17,9 @@
 #ifndef _FIBER_COND_H_
 #define _FIBER_COND_H_
 
+#define FIBER_COND_SUCCESS 0
+#define FIBER_COND_ERROR -1
+
 #include "fiber_mutex.h"
 #include "mpsc_fifo.h"
 #include <sys/types.h>
@@ -51,6 +54,8 @@ extern int fiber_cond_signal(fiber_cond_t* cond);
 extern int fiber_cond_broadcast(fiber_cond_t* cond);
 
 extern int fiber_cond_wait(fiber_cond_t* cond, fiber_mutex_t * mutex);
+
+extern int fiber_cond_timedwait(fiber_cond_t* cond, fiber_mutex_t * mutex, struct timespec *time);
 
 #ifdef __cplusplus
 }

@@ -14,8 +14,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <sys/time.h>
 #include "fiber_cond.h"
 #include "fiber_manager.h"
+#include "measure_time.h"
 
 int fiber_cond_init(fiber_cond_t* cond)
 {
@@ -29,7 +31,7 @@ int fiber_cond_init(fiber_cond_t* cond)
         return FIBER_ERROR;
     }
     write_barrier();
-    return FIBER_SUCCESS;
+    return FIBER_COND_SUCCESS;
 }
 
 void fiber_cond_destroy(fiber_cond_t* cond)
@@ -54,7 +56,7 @@ int fiber_cond_signal(fiber_cond_t* cond)
     }
     fiber_mutex_unlock(&cond->internal_mutex);
 
-    return FIBER_SUCCESS;
+    return FIBER_COND_SUCCESS;
 }
 
 int fiber_cond_broadcast(fiber_cond_t* cond)
@@ -68,7 +70,7 @@ int fiber_cond_broadcast(fiber_cond_t* cond)
     }
     fiber_mutex_unlock(&cond->internal_mutex);
 
-    return FIBER_SUCCESS;
+    return FIBER_COND_SUCCESS;
 }
 
 int fiber_cond_wait(fiber_cond_t* cond, fiber_mutex_t * mutex)
@@ -83,6 +85,34 @@ int fiber_cond_wait(fiber_cond_t* cond, fiber_mutex_t * mutex)
     fiber_manager_wait_in_mpsc_queue_and_unlock(fiber_manager_get(), &cond->waiters, mutex);
     fiber_mutex_lock(mutex);
 
-    return FIBER_SUCCESS;
+    return FIBER_COND_SUCCESS;
 }
 
+int fiber_cond_timedwait(fiber_cond_t* cond, fiber_mutex_t * mutex, struct timespec *time)
+{
+    struct timeval tv;
+    struct timezone tz;
+    struct timespec currTime;
+    struct timespec elapsedTime;
+    assert(cond);
+    assert(mutex);
+
+    assert(!cond->caller_mutex || cond->caller_mutex == mutex);
+    cond->caller_mutex = mutex;
+    __sync_fetch_and_add(&cond->waiter_count, 1);
+
+    fiber_manager_wait_in_mpsc_queue_and_unlock(fiber_manager_get(), &cond->waiters, mutex);
+    gettimeofday(&tv, &tz);
+    currTime.tv_sec = tv.tv_sec;
+    currTime.tv_nsec = tv.tv_usec * 1000;
+    int res = timeval_subtract(&elapsedTime, &currTime, time);
+
+    if (res<0) {
+    return FIBER_COND_ERROR;
+    }
+    else
+    {
+        fiber_mutex_lock(mutex);
+        return FIBER_COND_SUCCESS;
+    }
+}

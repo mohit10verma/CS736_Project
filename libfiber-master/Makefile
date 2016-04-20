@@ -1,5 +1,5 @@
 
-all: libfiber.so bin/echo_server
+all: libfiber.so bin/echo_server runtests
 
 VPATH += example src test submodules/libev
 
