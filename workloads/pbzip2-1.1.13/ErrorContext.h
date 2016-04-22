@@ -18,11 +18,12 @@ class ErrorContext
 private:
 	static ErrorContext * _instance;
 	//static pthread_mutex_t _err_ctx_mutex;
-	static fiber_mutex_t _err_ctx_mutex;
+
 	
 	int _first_kernel_err_no;
 	int _last_kernel_err_no;
-
+public:
+	static fiber_mutex_t _err_ctx_mutex;
 private:
 	ErrorContext():
 		_first_kernel_err_no( 0 ),

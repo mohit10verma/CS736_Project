@@ -10,14 +10,13 @@
 
 #include <cstring>
 #include <cerrno>
-
 namespace pbzip2
 {
 
 ErrorContext * ErrorContext::_instance = 0;
 //pthread_mutex_t ErrorContext::_err_ctx_mutex = PTHREAD_MUTEX_INITIALIZER;
+fiber_mutex_t ErrorContext::_err_ctx_mutex;
 
-int tmp = fiber_mutex_init(ErrorContext::_err_ctx_mutex);
 ErrorContext * ErrorContext::getInstance()
 {
 	fiber_mutex_lock( &_err_ctx_mutex );

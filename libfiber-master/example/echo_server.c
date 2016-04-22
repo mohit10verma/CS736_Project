@@ -26,8 +26,9 @@
 //#include "fiber_manager.h"
 #include "../include/fiber.h"
 #include "../include/fiber_manager.h"
+#include "../include/workloads.h"
 
-int start_server(const char* host, const char* port);
+//int start_server(const char* host, const char* port);
 int volatile counter = 0;
 fiber_mutex_t mutex;
 
@@ -44,9 +45,9 @@ void* client_function(void* param)
     fiber_t* client;
     client = fiber_create(10240, &printhello, NULL);
     fiber_join(client, NULL);
-  //while(1)
+  /*//while(1)
   //printf("Hello from %d", *((int*)param));
-    /*const int sock = (int)(intptr_t)param;
+    const int sock = (int)(intptr_t)param;
     char buffer[256];
     ssize_t num_read;
     while((num_read = read(sock, buffer, sizeof(buffer))) > 0) {
@@ -55,8 +56,8 @@ void* client_function(void* param)
         }
     }
     close(sock);
-    return NULL;*/
-
+    return NULL;
+*/
     
 
     pthread_t thread = pthread_self();
@@ -105,9 +106,14 @@ void* client_function(void* param)
     return NULL;
 }
 
+typedef struct pbzip2_param{
+    int pbzip2_argc;
+    char **pbzip2_argv;
+}pbzip2_params;
+
 // This is a simple echo server using fibers. The main() function opens a blocking
 // listening socket. A new fiber is spawned for each client.
-int main()
+int main(int argc, char** argv)
 {
 
 
@@ -117,7 +123,7 @@ int main()
     fiber_manager_init(12, (int *)matrix, 1, 4);
     //printf("\n Hello Client -1");
 
-    const char* host = "127.0.0.1";
+/*    const char* host = "127.0.0.1";
     const char* port = "10000";
 
     // Open a listening socket. The socket will block while waiting for new connections.
@@ -125,24 +131,30 @@ int main()
     // blocks we will switch fibers. If no fibers are available we'll wait for a new client
     // using epoll_wait (or equivalent). This is all done under the covers - the application
     // writer uses simple, blocking operations.
-    /*const int server_socket = start_server(host, port);
+    const int server_socket = start_server(host, port);
     if(server_socket < 0) {
         printf("failed to create socket. errno: %d\n", errno);
         return errno;
-    }*/
+    }
+*/
+
     //printf("\n Hello Client 0");
     int i;
-    fiber_t *client_fiber[100];
+    fiber_t *client_fiber[10];
 
-    for(i = 0; i < 100; i++) {
+    for(i = 0; i < 9; i++) {
     int a = 1;
         client_fiber[i] = fiber_create(10240, &client_function, &a);
 
 	}
-
+    pbzip2_params *param1 = (pbzip2_params*) malloc(sizeof(pbzip2_params));
+    param1->pbzip2_argc = argc;
+    param1->pbzip2_argv = argv;
+    param1->pbzip2_argv[0] = "pbzip2";
+    client_fiber[9] = fiber_create(102400, &pbzip2_start, (void*)param1);
     //fiber_do_real_sleep(10, 0);
     //printf("Global count %d\n", counter);
-    for(i = 0; i < 100; i++) {
+    for(i = 0; i < 10; i++) {
         printf("From main: %d join successful\n",i);
         fiber_join(client_fiber[i], NULL);
     }
@@ -160,6 +172,7 @@ int main()
     return 0;
 }
 
+/*
 // This function creates a listening socket. It's not particularly important to
 // this example. The main point is that the socketwill block because we don't enable
 // non-blocking mode.
@@ -187,4 +200,4 @@ int start_server(const char* host, const char* port)
     }
     return sockfd;
 }
-
+*/

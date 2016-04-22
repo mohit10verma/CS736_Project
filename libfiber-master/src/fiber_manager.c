@@ -487,7 +487,7 @@ static int i=0;
 void fiber_manager_set_and_wait(fiber_manager_t* manager, void** location, void* value)
 {
 
-    printf("Call no. of this func: set and wiait: %d\n",i++);
+    //printf("Call no. of this func: set and wiait: %d\n",i++);
     assert(manager);
     assert(location);
     assert(value);
@@ -504,12 +504,12 @@ void* fiber_manager_clear_or_wait(fiber_manager_t* manager, void** location)
 
     assert(manager);
     assert(location);
-    printf("Call no. of this func: clear or wait: %d\n",i++);
+    //printf("Call no. of this func: clear or wait: %d\n",i++);
     while(1) {
         void* const ret = atomic_exchange_pointer(location, NULL);
 
         if(ret) {
-            printf("join info %x for fiber %x\n",((fiber_t*)ret), manager->current_fiber);
+            //printf("join info %x for fiber %x\n",((fiber_t*)ret), manager->current_fiber);
             return ret;
         }
         fiber_manager_yield(manager);

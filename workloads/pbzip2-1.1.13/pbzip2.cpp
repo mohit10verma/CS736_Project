@@ -18,6 +18,10 @@
 #include <algorithm>
 #include <string>
 #include <new>
+#include "fiber.h"
+#include "fiber_mutex.h"
+#include "fiber_cond.h"
+#include "workloads.h"
 
 extern "C"
 {
@@ -192,7 +196,7 @@ void *consumer(void *);
 inline void safe_mutex_lock(fiber_mutex_t *mutex)
 {
 	int ret = fiber_mutex_lock(mutex);
-	if (ret != 0)
+	if (ret == 0)//changed
 	{
 		fprintf(stderr, "pthread_mutex_lock error [%d]! Aborting immediately!\n", ret);
 		cleanupAndQuit(-5);
@@ -205,7 +209,7 @@ inline void safe_mutex_lock(fiber_mutex_t *mutex)
 inline void safe_mutex_unlock(fiber_mutex_t *mutex)
 {
 	int ret = fiber_mutex_unlock(mutex);
-	if (ret != 0)
+	if (ret == 0)//changed
 	{
 		fprintf(stderr, "pthread_mutex_unlock error [%d]! Aborting immediately!\n", ret);
 		cleanupAndQuit(-6);
@@ -219,7 +223,7 @@ inline void safe_mutex_unlock(fiber_mutex_t *mutex)
 inline void safe_cond_signal(fiber_cond_t *cond)
 {
 	int ret = fiber_cond_signal(cond);
-	if (ret != 0)
+	if (ret == 0)//changed
 	{
 		fprintf(stderr, "pthread_cond_signal error [%d]! Aborting immediately!\n", ret);
 		cleanupAndQuit(-7);
@@ -233,7 +237,7 @@ inline void safe_cond_signal(fiber_cond_t *cond)
 inline void safe_cond_broadcast(fiber_cond_t *cond)
 {
 	int ret = fiber_cond_broadcast(cond);
-	if (ret != 0)
+	if (ret == 0)//changed
 	{
 		fprintf(stderr, "pthread_cond_broadcast error [%d]! Aborting immediately!\n", ret);
 		cleanupAndQuit(-7);
@@ -246,7 +250,7 @@ inline void safe_cond_broadcast(fiber_cond_t *cond)
 inline void safe_cond_wait(fiber_cond_t *cond, fiber_mutex_t *mutex)
 {
 	int ret = fiber_cond_wait(cond, mutex);
-	if (ret != 0)
+	if (ret == 0)//changed
 	{
 		fprintf(stderr, "pthread_cond_wait error [%d]! Aborting immediately!\n", ret);
 		fiber_mutex_unlock(mutex);
@@ -286,7 +290,8 @@ int safe_cond_timed_wait(fiber_cond_t *cond, fiber_mutex_t *mutex, int seconds, 
 	#endif
 	int pret = fiber_cond_timedwait(cond, mutex, &waitTimer);//TODO -- Check
 	// we are not using a compatible pthreads library so abort
-	if ((pret != 0) && (pret != EINTR) && (pret != EBUSY) && (pret != ETIMEDOUT))
+	//if ((pret != 0) && (pret != EINTR) && (pret != EBUSY) && (pret != ETIMEDOUT))
+	if ((pret != 1)&&(pret != EINTR) && (pret != EBUSY) && (pret != ETIMEDOUT))//changed
 	{
 		ErrorContext::getInstance()->saveError();
 		fiber_mutex_unlock(mutex);
@@ -297,7 +302,7 @@ int safe_cond_timed_wait(fiber_cond_t *cond, fiber_mutex_t *mutex, int seconds, 
 		cleanupAndQuit(-9);
 	}
 	#ifdef PBZIP_DEBUG
-	else if (pret != 0)
+	else if (pret == 0)
 	{
 		fprintf(stderr, "%s: pthread_cond_timedwait returned with non-fatal error [%d]\n", caller, pret);
 	}
@@ -1080,7 +1085,7 @@ void* terminatorThreadProc(void* arg)
 {
 	int ret = fiber_mutex_lock(&TerminateFlagMutex);
 
-	if (ret != 0)
+	if (ret == 0)//changed
 	{
 		ErrorContext::syncPrintErrnoMsg(stderr, errno);
 		fprintf(stderr, "Terminator thread: pthread_mutex_lock error [%d]! Aborting...\n", ret);
@@ -1148,7 +1153,7 @@ void cleanupAndQuit(int exitCode)
 	// syncSetTerminateFlag(1);
 	
 	int ret = fiber_mutex_lock(&ErrorHandlerMutex);
-	if (ret != 0)
+	if (ret == 0)//changed
 	{
 		fprintf(stderr, "Cleanup Handler: Failed to lock ErrorHandlerMutex! May double cleanup...\n");
 	}
@@ -2757,7 +2762,9 @@ queue *queueInit(int queueSize)
 		return NULL;
 	//fiber_cond_init(notTooMuchNumBuffered, NULL);
 	fiber_cond_init(notTooMuchNumBuffered);
+	printf("QueueInit completed successfully\n");
 	return (q);
+
 }
 
 
@@ -3313,8 +3320,17 @@ void usage(char* progname, const char *reason)
 /*
  *********************************************************
  */
-int main(int argc, char* argv[])
+
+typedef struct pbzip2_param{
+	int pbzip2_argc;
+	char **pbzip2_argv;
+}pbzip2_params;
+
+int pbzip2_start(void* arg)
 {
+	pbzip2_params* param = (pbzip2_params*)arg;
+	int argc = param->pbzip2_argc;
+	char **argv = param->pbzip2_argv;
 	//Code Added
 	fiber_mutex_init(&ErrorHandlerMutex);
 	fiber_mutex_init(&TerminateFlagMutex);
@@ -3322,6 +3338,7 @@ int main(int argc, char* argv[])
 	fiber_cond_init(&TerminateCond);
 	fiber_cond_init(&OutBufferHeadNotEmpty);
 	fiber_cond_init(&ErrStateChangeCond);
+	fiber_mutex_init(&ErrorContext::_err_ctx_mutex);
 
 	queue *fifo;
 	fiber_t *output;
@@ -3374,6 +3391,7 @@ int main(int argc, char* argv[])
 	size_t i, j, k;
 	bool switchedMtToSt = false; // switched from multi- to single-thread
 
+	printf("I am in pbzip2_start beginning\n");
 	// Initialize error context
 	if (ErrorContext::getInstance() == NULL)
 	{
@@ -3393,6 +3411,7 @@ int main(int argc, char* argv[])
 	// check to see if we are likely being called from TAR
 	if (argc < 2)
 	{
+		printf("From pbzip2: Not enough arguments\n");
 		OutputStdOut = 1;
 		keep = 1;
 	}
@@ -3818,7 +3837,7 @@ int main(int argc, char* argv[])
 
 	// Initialize child threads attributes
 	initChildThreadAttributes();
-
+	printf("INitialized chile thread attributes\n");
 	// setup signal handling (should be before creating any child thread)
 	sigInFilename = NULL;
 	sigOutFilename = NULL;
@@ -3881,7 +3900,10 @@ int main(int argc, char* argv[])
 	}
 
 	// create queue
+	numCPU = 4;//Hard coded: TODO: check
 	fifo = FifoQueue = queueInit(numCPU);
+
+	//printf("Number of CPUS: %d\n",numCPU);
 	if (fifo == NULL)
 	{
 		fprintf (stderr, "pbzip2: *ERROR: Queue Init failed.  Aborting...\n");
@@ -4328,7 +4350,7 @@ int main(int argc, char* argv[])
 					switchedMtToSt = true;
 
 					// wait for fileWriter thread to exit
-					if (fiber_join(output, NULL) != 0)
+					if (fiber_join(output, NULL) == 0)//changed
 					{
 						ErrorContext::getInstance()->saveError();
 						handle_error(EF_EXIT, 1,
@@ -4373,6 +4395,7 @@ int main(int argc, char* argv[])
 				{
 					//ret = pthread_create(&fifo->consumers[i], &ChildThreadAttributes, consumer, fifo);
 					fifo->consumers[i] = fiber_create(PBZIP_STACK_SIZE, consumer, fifo);
+					printf("Creating consumer threads in pbzip2....yayyyyyyyyyyyyyy\n");
 					ret = 0;
 					if (ret != 0)
 					{
@@ -4417,7 +4440,7 @@ int main(int argc, char* argv[])
 		{
 			// wait for fileWriter thread to exit
 			ret = fiber_join(output, NULL);
-			if (ret != 0)
+			if (ret == 0)//changed
 			{
 				ErrorContext::printErrnoMsg(stderr, errno);
 				errLevelCurrentFile = errLevel = 1;
@@ -4430,7 +4453,7 @@ int main(int argc, char* argv[])
 			for (i = 0; (int)i < numCPU; i++)
 			{
 				ret = fiber_join(fifo->consumers[i], NULL);
-				if (ret != 0)
+				if (ret == 0)//changed
 				{
 					ErrorContext::printErrnoMsg(stderr, errno);
 					errLevelCurrentFile = errLevel = 1;
@@ -4530,7 +4553,7 @@ int main(int argc, char* argv[])
 	}
 	
 	ret = fiber_join(TerminatorThread, NULL);
-	if (ret != 0)
+	if (ret == 0)//changed
 	{
 		fprintf(stderr, "Error on join of TerminatorThread [%d]\n", ret);
 	}

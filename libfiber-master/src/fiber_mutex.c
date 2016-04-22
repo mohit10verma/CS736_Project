@@ -26,10 +26,10 @@ int fiber_mutex_init(fiber_mutex_t* mutex)
     assert(mutex);
     mutex->counter = 1;
     if(!mpsc_fifo_init(&mutex->waiters)) {
-        return FIBER_MUTEX_ERROR;
+        return FIBER_ERROR;
     }
     write_barrier();
-    return FIBER_MUTEX_SUCCESS;
+    return FIBER_SUCCESS;
 }
 
 int fiber_mutex_destroy(fiber_mutex_t* mutex)
@@ -37,7 +37,7 @@ int fiber_mutex_destroy(fiber_mutex_t* mutex)
     assert(mutex);
     mutex->counter = 1;
     mpsc_fifo_destroy(&mutex->waiters);
-    return FIBER_MUTEX_SUCCESS;
+    return FIBER_SUCCESS;
 }
 
 int fiber_mutex_lock(fiber_mutex_t* mutex)
@@ -47,7 +47,7 @@ int fiber_mutex_lock(fiber_mutex_t* mutex)
     const int val = __sync_sub_and_fetch(&mutex->counter, 1);
     if(val == 0) {
         //we just got the lock, there was no contention
-        return FIBER_MUTEX_SUCCESS;
+        return FIBER_SUCCESS;
     }
 
     //we failed to acquire the lock (there's contention). we'll wait.
@@ -55,7 +55,7 @@ int fiber_mutex_lock(fiber_mutex_t* mutex)
     manager->lock_contention_count += 1;
     fiber_manager_wait_in_mpsc_queue(manager, &mutex->waiters);
 
-    return FIBER_MUTEX_SUCCESS;
+    return FIBER_SUCCESS;
 }
 
 int fiber_mutex_trylock(fiber_mutex_t* mutex)
@@ -64,9 +64,9 @@ int fiber_mutex_trylock(fiber_mutex_t* mutex)
 
     if(__sync_bool_compare_and_swap(&mutex->counter, 1, 0)) {
         //we just got the lock, there was no contention
-        return FIBER_MUTEX_SUCCESS;
+        return FIBER_SUCCESS;
     }
-    return FIBER_MUTEX_ERROR;
+    return FIBER_ERROR;
 }
 
 int fiber_mutex_unlock_internal(fiber_mutex_t* mutex)
@@ -93,6 +93,6 @@ int fiber_mutex_unlock(fiber_mutex_t* mutex)
         fiber_yield();
     }
 
-    return FIBER_MUTEX_SUCCESS;
+    return FIBER_SUCCESS;
 }
 

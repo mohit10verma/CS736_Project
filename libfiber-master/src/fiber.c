@@ -70,7 +70,7 @@ static void* fiber_go_function(void* param)
     void* const result = the_fiber->run_function(the_fiber->param);
 
     counter++;
-    printf("In fiber go func %d\n", counter);
+    //printf("In fiber go func %d\n", counter);
     //fiber_shutdown();
     fiber_join_routine(the_fiber, result);
 

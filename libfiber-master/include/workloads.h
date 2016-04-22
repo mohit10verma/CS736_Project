@@ -14,49 +14,21 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _FIBER_COND_H_
-#define _FIBER_COND_H_
+#ifndef _WORKLOAD_H_
+#define _WORKLOAD_H_
 
-#include "fiber_mutex.h"
-#include "mpsc_fifo.h"
-#include <sys/types.h>
-#include <time.h>
+#include <stdint.h>
 
-/*
-    Author: Brian Watling
-    Email: brianwatling@hotmail.com
-    Website: https://github.com/brianwatling
-
-    Description: A condition variable structure for fibers.
-*/
-
-typedef struct fiber_cond
-{
-    fiber_mutex_t* caller_mutex;
-    volatile intptr_t waiter_count;
-    mpsc_fifo_t waiters;
-    fiber_mutex_t internal_mutex;
-} fiber_cond_t;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern int fiber_cond_init(fiber_cond_t* cond);
-
-extern void fiber_cond_destroy(fiber_cond_t* cond);
-
-extern int fiber_cond_signal(fiber_cond_t* cond);
-
-extern int fiber_cond_broadcast(fiber_cond_t* cond);
-
-extern int fiber_cond_wait(fiber_cond_t* cond, fiber_mutex_t * mutex);
-
-extern int fiber_cond_timedwait(fiber_cond_t* cond, fiber_mutex_t * mutex, struct timespec *time);
+extern int pbzip2_start(void* arg);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif//_WORKLOAD_H_
 

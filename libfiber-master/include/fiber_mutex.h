@@ -17,9 +17,6 @@
 #ifndef _FIBER_MUTEX_H_
 #define _FIBER_MUTEX_H_
 
-#define FIBER_MUTEX_SUCCESS  0
-#define FIBER_MUTEX_ERROR  -1
-
 /*
     Author: Brian Watling
     Email: brianwatling@hotmail.com

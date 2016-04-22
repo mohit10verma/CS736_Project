@@ -1,5 +1,5 @@
 
-all: libfiber.so bin/echo_server runtests
+all: libfiber.so #bin/echo_server
 
 VPATH += example src test submodules/libev
 
@@ -98,7 +98,7 @@ LDFLAGSAFTER += -ldl -lm -lrt
 endif
 
 USE_COMPILER_THREAD_LOCAL ?= 1
-LINKER_SHARED_FLAG ?= -shared
+LINKER_SHARED_FLAG ?= -shared -fPIC
 FAST_SWITCHING ?= 1
 LDFLAGSAFTER ?= 
 

@@ -8,16 +8,16 @@ SHELL = /bin/sh
 
 # Thread-related flags
 # On some compilers -pthreads
-#CXXFLAGS_PTHREAD = -pthread
+CXXFLAGS_PTHREAD = -pthread
 
 # Comment out CXXFLAGS line below to disable pthread semantics in code
-#CXXFLAGS_PTHREAD += -D_POSIX_PTHREAD_SEMANTICS
+CXXFLAGS_PTHREAD += -D_POSIX_PTHREAD_SEMANTICS
 
-#LDLIBS_PTHREAD = -lpthread
+LDLIBS_PTHREAD = -lpthread
 
 
 # Optimization flags
-CXXFLAGS = -O0 -g
+CXXFLAGS = -O2
 
 #CXXFLAGS += -g -Wall
 #CXXFLAGS += -ansi
@@ -28,7 +28,6 @@ CXXFLAGS = -O0 -g
 # (less than 2GB) and systems that have compilers that treat int as 64bit
 # natively (ie: modern AIX)
 CXXFLAGS += -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
-CXXFLAGS += -m64 -DARCH_x86_64 -fPIC
 
 # Uncomment CXXFLAGS line below if you want to compile pbzip2 without load
 # average support for systems that do not support it
@@ -48,7 +47,7 @@ CXXFLAGS += -m64 -DARCH_x86_64 -fPIC
 #CXXFLAGS += -DIGNORE_TRAILING_GARBAGE=1
 
 # Add thread-related flags
-#CXXFLAGS += $(CXXFLAGS_PTHREAD)
+CXXFLAGS += $(CXXFLAGS_PTHREAD)
 
 
 # Linker flags
@@ -57,7 +56,7 @@ LDFLAGS =
 
 # External libraries
 LDLIBS = -lbz2
-#LDLIBS += $(LDLIBS_PTHREAD)
+LDLIBS += $(LDLIBS_PTHREAD)
 
 
 # Where you want pbzip2 installed when you do 'make install'
@@ -65,11 +64,11 @@ PREFIX = /usr
 DESTDIR =
 
 
-all: pbzip2.so
+all: pbzip2
 
 # Standard pbzip2 compile
-pbzip2.so: pbzip2.cpp BZ2StreamScanner.cpp ErrorContext.cpp
-	$(CXX) -shared -fPIC $(CXXFLAGS) $(LDFLAGS) $^ -o pbzip2.so $(LDLIBS) ../../libfiber-master/libfiber.so -I../../libfiber-master/include/ 
+pbzip2: pbzip2.cpp BZ2StreamScanner.cpp ErrorContext.cpp
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $^ -o pbzip2 $(LDLIBS) -I../../libfiber-master/include/
 
 # Choose this if you want to compile in a static version of the libbz2 library
 pbzip2-static: pbzip2.cpp BZ2StreamScanner.cpp ErrorContext.cpp libbz2.a
