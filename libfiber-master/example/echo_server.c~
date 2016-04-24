@@ -28,15 +28,27 @@
 #include "../include/fiber_manager.h"
 
 int start_server(const char* host, const char* port);
-int volatile counter = 0;
+volatile int counter = 0;
 fiber_mutex_t mutex;
 
 // This function reads data from a socket and echos it back. Both read() and write()
 // operations will block within the context of this function. The fiber runtime will
 // intercept calls to read() or write and switch fibers if they will block. Basically,
 // we write blocking code and libfiber makes it event driven.
+void* printhello(){
+    printf("Hello\n");
+    __sync_fetch_and_add(&counter, 1);
+    int i;
+    /*for(i = 0; i < 1000; ++i) {
+        usleep(rand() % 1000 + 1000);
+    }*/
+    return NULL;
+}
 void* client_function(void* param)
 {
+    fiber_t* client;
+    client = fiber_create(10240, &printhello, NULL);
+    fiber_join(client, NULL);
   //while(1)
   //printf("Hello from %d", *((int*)param));
     /*const int sock = (int)(intptr_t)param;
@@ -50,7 +62,7 @@ void* client_function(void* param)
     close(sock);
     return NULL;*/
 
-    ++counter;
+    
 
     pthread_t thread = pthread_self();
     cpu_set_t cpuset;
@@ -69,8 +81,9 @@ void* client_function(void* param)
             printf("CPU %d\n", j);
 
     printf("Hello Client 1\n");*/
-    fiber_change(3);
-    /*while(1){
+    //fiber_change(0);
+    /*
+    while(1){
       printf("Hello from %d\n", *((int*)param));
     }*/
     //sleep(5);
@@ -92,6 +105,7 @@ void* client_function(void* param)
     }
 
     printf("Value of temp is: %d\n", temp);
+    __sync_fetch_and_add(&counter, 1);
 
     return NULL;
 }
@@ -103,6 +117,8 @@ int main()
 
 
     //printf("\n Hello Client -2");
+    int matrix[4][4];
+    matrix[0][0] = matrix[0][1] = matrix[0][2] = matrix[0][3] = 4;
     fiber_manager_init(12);
     //printf("\n Hello Client -1");
 
@@ -121,15 +137,17 @@ int main()
     }*/
     //printf("\n Hello Client 0");
     int i;
-    fiber_t *client_fiber[100];
+    fiber_t *client_fiber[1000];
 
-    for(i = 0; i < 100; i++) {
-        client_fiber[i] = fiber_create(10240, &client_function, NULL);
-    }
+    for(i = 0; i < 10; i++) {
+    int a = 1;
+        client_fiber[i] = fiber_create(10240, &client_function, &a);
+
+	}
 
     //fiber_do_real_sleep(10, 0);
     //printf("Global count %d\n", counter);
-    for(i = 0; i < 100; i++) {
+    for(i = 0; i < 10; i++) {
         printf("From main: %d join successful\n",i);
         fiber_join(client_fiber[i], NULL);
     }

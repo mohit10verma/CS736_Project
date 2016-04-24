@@ -19,12 +19,25 @@
 
 #include <stdint.h>
 
+enum enc_dec_method {
+    USE_SAMPLE_CODE=0x01,
+    USE_iAES       =0x02,
+    USE_iAES_BLK   =0x04,
+    USE_iAES_CBC   =0x08,
+    USE_iAES_CTR   =0x10,
+    USE_ARRAY      =0x20,
+    // if you add something to this enum then you need to add it (except for the USE_ARRAY entry) to the
+    // check_sizes_and_methods() routine 'method[]' array
+    //
+};
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 extern int pbzip2_start(void* arg);
+int aes_example_main(void* args);
 
 #ifdef __cplusplus
 }
