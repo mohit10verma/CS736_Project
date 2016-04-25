@@ -32,10 +32,19 @@
 int volatile counter = 0;
 fiber_mutex_t mutex;
 
-// This function reads data from a socket and echos it back. Both read() and write()
-// operations will block within the context of this function. The fiber runtime will
-// intercept calls to read() or write and switch fibers if they will block. Basically,
-// we write blocking code and libfiber makes it event driven.
+void *black_scholes(void *param)
+{
+	entry_point(1, "../../workloads/blackscholes/in_10M.txt", "../../workloads/blackscholes/prices.txt");
+	return NULL;
+}
+
+void *x264(void *param)
+{
+	char *array[26] = {"./x264","--quiet","--qp","20", "--partitions", "b8x8,i4x4", "--ref", "5","--direct", "auto", "--b-pyramid", "--weightb", "--mixed-refs", "--no-fast-pskip", "--me", "umh", "--subme", "7", "--analyse", "b8x8,i4x4", "--threads", "1", "-o", "../../workloads/x264/eledream.264", "../../workloads/x264/eledream_1920x1080_512.y4m", NULL};
+	x264_entry(25, array);
+	return NULL;
+}
+
 void* printhello(){
     printf("Hello\n");
     return NULL;
@@ -142,11 +151,15 @@ int main(int argc, char** argv)
     int i;
     fiber_t *client_fiber[10];
 
-    for(i = 0; i < 9; i++) {
+    for(i = 0; i < 7; i++) {
     int a = 1;
         client_fiber[i] = fiber_create(10240, &client_function, &a);
 
 	}
+	
+	client_fiber[7] = fiber_create(10240, &black_scholes, NULL);
+	client_fiber[8] = fiber_create(10240000, &x264, NULL);
+	
     pbzip2_params *param1 = (pbzip2_params*) malloc(sizeof(pbzip2_params));
     param1->pbzip2_argc = argc;
     param1->pbzip2_argv = argv;

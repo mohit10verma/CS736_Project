@@ -1,7 +1,10 @@
 #!/bin/bash
 
 make
-cd example
+cd ../workloads/x264
+make
+cd ../../libfiber-master/example
+/usr/bin/g++ -O3 -g -funroll-loops -fprefetch-loop-arrays -fno-exceptions -static-libgcc -Wl,--hash-style=both,--as-needed -DPARSEC_VERSION=3.0-beta-20150206 -msse3  -DNCO=4  -fPIC  ../../workloads/blackscholes/blackscholes.simd.c -L/usr/lib64 -L/usr/lib -shared -o ../../workloads/blackscholes/blackscholes.simd.so
 gcc -c -g echo_server.c -m64 -DARCH_x86_64 -fPIC
-gcc -o test echo_server.o ../libfiber.so ../pbzip2.so
+gcc -o test echo_server.o ../libfiber.so ../pbzip2.so ../../workloads/blackscholes/blackscholes.simd.so ../../workloads/x264/x264.so
 #cd example/
