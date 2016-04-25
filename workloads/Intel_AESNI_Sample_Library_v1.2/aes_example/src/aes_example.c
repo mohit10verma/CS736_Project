@@ -32,9 +32,11 @@
  */
 #include <stdio.h>
 #include <malloc.h>
+#include <stdint.h>
 #include "my_getopt.h"
 #include "aes_example.h"
 #include "workloads.h"
+#include "measure_time.h"
 
 #ifdef __linux__
 #include <string.h>
@@ -679,6 +681,9 @@ char aes_encrypt(unsigned int crypt_method,
 			exit(1);
 	}
 
+	fiber_change(2);
+	uint64_t begin = RDTSCP();
+
 	if( expandedKeySize == 0)
 	{
 		// note that I save off key once at first calling.
@@ -694,6 +699,7 @@ char aes_encrypt(unsigned int crypt_method,
 		}
 		//printf("expandedKeySize= %d key= %p expandedKey= %p at %s %d\n", expandedKeySize, key, expandedKey, __FILE__, __LINE__);
 		/* expand the key into an 176, 208, 240 bytes key */
+		
 		if(crypt_method & USE_iAES)
 		{
 			switch (size)
@@ -728,6 +734,7 @@ char aes_encrypt(unsigned int crypt_method,
      */
 
 	// input, output, key, numblocks
+	
 	if(crypt_method & USE_iAES)
 	{
 		switch (size)
@@ -768,6 +775,8 @@ char aes_encrypt(unsigned int crypt_method,
 				output[(i*4)+j] = block[(i+(j*4))];
 		}
     }
+	uint64_t end = RDTSCP();
+	double diff = (1.0*(end - begin))/FREQ;
     return 0;
 }
 
@@ -801,6 +810,9 @@ char aes_decrypt(unsigned int crypt_method,
 			exit(1);
 	}
 
+	fiber_change(2);
+	uint64_t begin = RDTSCP();
+
 	if( expandedKeySize == 0)
 	{
 		// note that I save off key once at first calling.
@@ -815,6 +827,7 @@ char aes_decrypt(unsigned int crypt_method,
 			return MEMORY_ALLOCATION_PROBLEM;
 		}
     	/* expand the key into an 176, 208, 240 bytes key */
+		
 		if(crypt_method & USE_iAES)
 		{
 			switch (size)
@@ -889,6 +902,8 @@ char aes_decrypt(unsigned int crypt_method,
 				output[(i*4)+j] = block[(i+(j*4))];
 		}
 	}
+	uint64_t end = RDTSCP();
+	double diff = (1.0*(end - begin))/FREQ;
 	return 0;
 }
 
@@ -1743,6 +1758,9 @@ int do_encrypt_decrypt(int key_size_in_bytes, char *fl_input, char *fl_enc, char
 			aesData.num_blocks = numBlocks;
 			aesData.iv = local_test_iv;
 
+			fiber_change(2);
+			uint64_t begin = RDTSCP();
+
 			if((crypt_method[oper] & USE_iAES_CTR) || (crypt_method[oper] & USE_iAES_CBC))
 			{
 
@@ -1857,6 +1875,9 @@ int do_encrypt_decrypt(int key_size_in_bytes, char *fl_input, char *fl_enc, char
 					tm_end = get_elapsed_time();
 				}
 			}
+
+			uint64_t end = RDTSCP();
+			double diff = (1.0*(end - begin))/FREQ;
 
 			// write the output file
 			if(verbose > 1)

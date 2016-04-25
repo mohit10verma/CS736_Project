@@ -1,5 +1,5 @@
 #!/bin/bash
 
 git add *
-git commit --amend -m "blackscholes and x264 benchmarks added" 
+git commit -m "RDTSC added to pbzip"
 git push origin unmesh

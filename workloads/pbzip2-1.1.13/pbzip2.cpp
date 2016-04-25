@@ -22,6 +22,9 @@
 #include "fiber_mutex.h"
 #include "fiber_cond.h"
 #include "workloads.h"
+#include "measure_time.h"
+
+int volatile counter = 0;
 
 extern "C"
 {
@@ -1467,7 +1470,11 @@ void *consumer_decompress(void *q)
 		outSize = 900000;
 
 		int bzret = BZ_OK;
-		
+
+		//fiber_change(1);
+		counter++;
+		uint64_t begin = RDTSCP();
+
 		if (fileData->sequenceNumber < 2)
 		{
 			// start of new stream from in queue (0 -> single block; 1 - mutli)
@@ -1585,6 +1592,10 @@ void *consumer_decompress(void *q)
 				DecompressedData = NULL;
 			}
 		}
+
+		uint64_t end = RDTSCP();
+		double diff = (1.0*(end-begin))/FREQ;
+		printf("Diff in consumer decompress is %f\n", diff);
 
 		/*
 		 * < 0 - fatal error;
@@ -2032,6 +2043,10 @@ int directcompress(int hInfile, OFF_T fileSize, int blockSize, const char *OutFi
 		}
 
 		// compress the memory buffer (blocksize=9*100k, verbose=0, worklevel=30)
+		//fiber_change(1);
+		counter++;
+		uint64_t begin = RDTSCP();
+
 		ret = BZ2_bzBuffToBuffCompress(CompressedData, &outSize, FileData, inSize, BWTblockSize, Verbosity, 30);
 		if (ret != BZ_OK)
 		{
@@ -2042,6 +2057,10 @@ int directcompress(int hInfile, OFF_T fileSize, int blockSize, const char *OutFi
 			handle_error(EF_EXIT, -1, "pbzip2: *ERROR during compression: %d!  Aborting...\n", ret);
 			return -1;
 		}
+
+		uint64_t end = RDTSCP();
+		double diff = (1.0*(end - begin))/FREQ;
+		printf("Diff in direct compress is %f\n", diff);
 
 		#ifdef PBZIP_DEBUG
 		fprintf(stderr, "\n   Original Block Size: %"PRIuMAX"\n", (uintmax_t)inSize);
@@ -2629,6 +2648,10 @@ void *consumer (void *q)
 		}
 
 		// compress the memory buffer (blocksize=9*100k, verbose=0, worklevel=30)
+		//fiber_change(1);
+		counter++;
+		uint64_t begin = RDTSCP();
+
 		ret = BZ2_bzBuffToBuffCompress(CompressedData, &outSize,
 				fileData->buf, fileData->bufSize, BWTblockSize, Verbosity, 30);
 		if (ret != BZ_OK)
@@ -2636,6 +2659,10 @@ void *consumer (void *q)
 			handle_error(EF_EXIT, -1, "pbzip2: *ERROR during compression: %d!  Aborting...\n", ret);
 			return (NULL);
 		}
+
+		uint64_t end = RDTSCP();
+		double diff = (1.0*(end - begin))/FREQ;
+		printf("Diff in consumer compress is %f\n", diff);
 
 		#ifdef PBZIP_DEBUG
 		fprintf(stderr, "\n   Original Block Size: %u\n", (unsigned)fileData->bufSize);
@@ -4440,6 +4467,7 @@ int pbzip2_start(void* arg)
 		{
 			// wait for fileWriter thread to exit
 			ret = fiber_join(output, NULL);
+			printf("joining ouput thread\n");
 			if (ret == 0)//changed
 			{
 				ErrorContext::printErrnoMsg(stderr, errno);
@@ -4453,6 +4481,7 @@ int pbzip2_start(void* arg)
 			for (i = 0; (int)i < numCPU; i++)
 			{
 				ret = fiber_join(fifo->consumers[i], NULL);
+				printf("joining consumer thread %d\n", i);
 				if (ret == 0)//changed
 				{
 					ErrorContext::printErrnoMsg(stderr, errno);
@@ -4553,6 +4582,7 @@ int pbzip2_start(void* arg)
 	}
 	
 	ret = fiber_join(TerminatorThread, NULL);
+	printf("joining terminator thread\n");
 	if (ret == 0)//changed
 	{
 		fprintf(stderr, "Error on join of TerminatorThread [%d]\n", ret);
@@ -4584,6 +4614,8 @@ int pbzip2_start(void* arg)
 	timeCalc = timeStop - timeStart;
 	if (QuietMode != 1)
 		fprintf(stderr, "\n     Wall Clock: %f seconds\n", timeCalc);
+
+	printf("Global Counter value is: %d\n", counter);
 
 	exit(errLevel);
 }
