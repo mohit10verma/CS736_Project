@@ -49,7 +49,7 @@ ifeq ($(ARCH),x86)
 CFLAGS += -m32 -march=i686 -DARCH_x86
 endif
 
-CFLAGS += -pthread -Wall -Iinclude -Isubmodules/libev -D_REENTRANT -ggdb -O0
+CFLAGS += -pthread -Wall -Iinclude -Isubmodules/libev -D_REENTRANT
 
 #don't use split-stack on gcc 4.6 since it doesn't implement getcontext, setcontext, or makecontext
 GCC46 = $(shell $(CC) -v 2>&1 | grep "gcc.*4.6" > /dev/null; echo $$?)

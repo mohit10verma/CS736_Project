@@ -72,7 +72,7 @@ extern int fiber_yield();
 
 extern int fiber_detach(fiber_t* f);
 
-extern void fiber_change(size_t index);
+extern void fiber_change(size_t index, int* affinity, uint64_t* loop_index, double timetaken, int enable);
 
 #ifdef __cplusplus
 }

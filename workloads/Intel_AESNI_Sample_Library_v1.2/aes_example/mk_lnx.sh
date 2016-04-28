@@ -28,13 +28,13 @@ mkdir bin
 rm $out
 
 lvl= 
-lvl=-O3
+lvl=
 yasm=../yasm/yasm
 
 mkdir -p obj/x${arch}
 
-$yasm -D__linux__ -g dwarf2 -f elf${sz} asm/x${arch}/do_rdtsc.s -o obj/x${arch}/do_rdtsc.o
+$yasm -D__linux__ dwarf2 -f elf${sz} asm/x${arch}/do_rdtsc.s -o obj/x${arch}/do_rdtsc.o
 
-gcc -O3 -shared -fPIC -m${sz} -g $lvl -o $out src/main.c src/aes_example.c src/my_getopt.c -Isrc -I../intel_aes_lib/include obj/x${arch}/do_rdtsc.o -I../../../libfiber-master/include ../intel_aes_lib/lib/x${arch}/intel_aes${arch}.a
+gcc -shared -fPIC -m${sz} -o $out src/main.c src/aes_example.c src/my_getopt.c -Isrc -I../intel_aes_lib/include obj/x${arch}/do_rdtsc.o -I../../../libfiber-master/include ../intel_aes_lib/lib/x${arch}/intel_aes${arch}.a
 
 echo created $out

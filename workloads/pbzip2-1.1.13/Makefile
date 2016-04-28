@@ -17,7 +17,7 @@ SHELL = /bin/sh
 
 
 # Optimization flags
-CXXFLAGS = -O0 -g
+CXXFLAGS =
 
 #CXXFLAGS += -g -Wall
 #CXXFLAGS += -ansi
@@ -69,7 +69,7 @@ all: pbzip2.so
 
 # Standard pbzip2 compile
 pbzip2.so: pbzip2.cpp BZ2StreamScanner.cpp ErrorContext.cpp
-	$(CXX) -shared -fPIC $(CXXFLAGS) $(LDFLAGS) $^ -o pbzip2.so $(LDLIBS) ../../libfiber-master/libfiber.so -I../../libfiber-master/include/ 
+	$(CXX) -shared -fPIC $(CXXFLAGS) $(LDFLAGS) $^ -o pbzip2.so $(LDLIBS) -I../../libfiber-master/include/
 
 # Choose this if you want to compile in a static version of the libbz2 library
 pbzip2-static: pbzip2.cpp BZ2StreamScanner.cpp ErrorContext.cpp libbz2.a

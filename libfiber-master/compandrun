@@ -1,7 +1,29 @@
 #!/bin/bash
+set -x
 
-make
-cd example
-gcc -c -g echo_server.c -m64 -DARCH_x86_64 -fPIC
-gcc -o test echo_server.o ../libfiber.so ../pbzip2.so
+rm *.so
+make clean all
+#cd ../workloads/x264
+#make
+#cd ../../libfiber-master/example
+cd ../workloads/c-blosc-1.8.0/examples/
+rm *.so
+gcc -g -fPIC -DARCH_x86_64 -m64 -shared -msse2 simple.c ../blosc/*.c -I../blosc -I../../../libfiber-master/include/ -o blosc.so
+cp blosc.so ../../../libfiber-master/
+cd ../../../libfiber-master/
+cd ../workloads/pbzip2-1.1.13/
+make clean all
+cp pbzip2.so ../../libfiber-master/
+cd ../../libfiber-master/example
+cd ../../workloads/Intel_AESNI_Sample_Library_v1.2
+./mk_lnx64_all.sh
+cd ../../libfiber-master/example
+cd ../../workloads/Needleman_Wunsch/src/
+make clean all
+cp needleman.so ../../../libfiber-master/
+cd ../../../libfiber-master/example
+/usr/bin/g++ -funroll-loops -fprefetch-loop-arrays -fno-exceptions -static-libgcc -Wl,--hash-style=both,--as-needed -DPARSEC_VERSION=3.0-beta-20150206 -msse3  -DNCO=4  -fPIC  ../../workloads/blackscholes/blackscholes.simd.c -L/usr/lib64 -L/usr/lib -shared -o ../../workloads/blackscholes/blackscholes.simd.so
+gcc -c echo_server.c -m64 -DARCH_x86_64 -fPIC
+gcc -o test echo_server.o ../libfiber.so ../pbzip2.so ../../workloads/Intel_AESNI_Sample_Library_v1.2/aes_example/bin/aes_example64.so ../blosc.so ../../workloads/blackscholes/blackscholes.simd.so
+
 #cd example/

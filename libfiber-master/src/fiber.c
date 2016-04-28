@@ -51,7 +51,7 @@ void fiber_join_routine(fiber_t* the_fiber, void* result)
     the_fiber->state = FIBER_STATE_DONE;
 
     fiber_manager_get()->done_fiber = the_fiber;
-    printf("Exited\n");
+    //printf("Exited\n");
     fiber_manager_yield(fiber_manager_get());
     assert(0 && "should never get here");
 }
@@ -253,18 +253,18 @@ int fiber_detach(fiber_t* f)
     return FIBER_SUCCESS;
 }
 
-void fiber_change(size_t index)
+void fiber_change(size_t instruction_type, int* affinity, uint64_t* loop_index, double timetaken, int enable)
 {
     //printf("API\n");
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
-    int s1 = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-    if(CPU_ISSET(index, &cpuset))
-        return;
+//    int s1 = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+//    if(CPU_ISSET(instruction_type, &cpuset))
+//        return;
     fiber_manager_t* manager = fiber_manager_get();
     fiber_t* current_fiber = manager->current_fiber;
     //current_fiber->context.cpuset = index;
 //    fflush(stdout);
-    fiber_scheduler_change(manager, index);
+    fiber_scheduler_change(manager, instruction_type, affinity, loop_index,  timetaken, enable);
 }
 

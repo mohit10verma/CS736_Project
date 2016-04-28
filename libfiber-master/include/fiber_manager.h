@@ -63,6 +63,8 @@ typedef struct fiber_manager
     uint64_t poll_count;
     uint64_t event_wait_count;
     uint64_t lock_contention_count;
+    int affinity;
+    int tid;
 } fiber_manager_t;
 
 #ifdef __cplusplus
@@ -88,7 +90,7 @@ extern void fiber_manager_yield(fiber_manager_t* manager);
 extern fiber_manager_t* fiber_manager_get();
 
 /* this should be called immediately when the applicaion starts */
-extern int fiber_manager_init(size_t num_threads, int* matrix, int m, int n);
+extern int fiber_manager_init(size_t num_threads, double * matrix, int m, int n);
 
 extern void fiber_shutdown();
 
@@ -153,7 +155,7 @@ extern fiber_manager_t* get_fiber_manager(int i);
 
 extern fiber_t* get_parent_fiber();
 
-extern int **feat_mat;
+extern double **feat_mat;
 
 #ifdef __cplusplus
 }

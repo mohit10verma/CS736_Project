@@ -36,8 +36,12 @@ enum enc_dec_method {
 extern "C" {
 #endif
 
-extern int pbzip2_start(void* arg);
-int aes_example_main(void* args);
+extern int pbzip2_start(void* args);
+extern int aes_example_main(void* args);
+extern int dedup_start(void* args);
+extern int cblosc_simple_start(void* args);
+extern int cblosc_multithreaded_start(void* args);
+
 
 #ifdef __cplusplus
 }

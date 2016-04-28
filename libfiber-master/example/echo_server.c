@@ -21,8 +21,8 @@
 #include <errno.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <pthread.h>
-
+//#include <pthread.h>
+#include "../include/measure_time.h"
 //#include "fiber_manager.h"
 #include "../include/fiber.h"
 #include "../include/fiber_manager.h"
@@ -40,6 +40,14 @@ void* printhello(){
     printf("Hello\n");
     return NULL;
 }
+
+void *black_scholes(void *param)
+{
+    entry_point(1, "../../workloads/blackscholes/in_64K.txt", "../../workloads/blackscholes/prices.txt");
+    return NULL;
+}
+
+
 void* client_function(void* param)
 {
     fiber_t* client;
@@ -60,7 +68,7 @@ void* client_function(void* param)
 */
     
 
-    pthread_t thread = pthread_self();
+    //pthread_t thread = pthread_self();
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     int j;
@@ -68,8 +76,20 @@ void* client_function(void* param)
     for(j = 0; j < 1000000; j++)
         temp++;
 
-    int s = pthread_getaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
+    //int s = pthread_getaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
 
+    printf("Set returned by pthread_getaffinity_np() contained:\n");
+    for (j = 0; j < CPU_SETSIZE; j++) {
+        //printf("in CPU\n");
+        if (CPU_ISSET(j, &cpuset))
+            printf("CPU %d\n", j);
+    }
+    int check_affinity;
+    uint64_t loop_index;
+
+    //fiber_change(4, &check_affinity, &loop_index, 2.0);
+
+    printf("New affinity = %d and loopindex = %lu",check_affinity, loop_index);
 
     /*printf("Set returned by pthread_getaffinity_np() contained:\n");
     for (j = 0; j < CPU_SETSIZE; j++)
@@ -84,12 +104,12 @@ void* client_function(void* param)
     }*/
     //sleep(5);
     //printf("Hello Client 2\n");
-    pthread_t thread1 = pthread_self();
+   // pthread_t thread1 = pthread_self();
     CPU_ZERO(&cpuset);
-    int s1 = pthread_getaffinity_np(thread1, sizeof(cpu_set_t), &cpuset);
+    //int s1 = pthread_getaffinity_np(thread1, sizeof(cpu_set_t), &cpuset);
 
 
-
+   // printf("after %d",s1);
     for(j = 0; j < 1000000; j++)
         temp++;
 
@@ -111,6 +131,71 @@ typedef struct pbzip2_param{
     char **pbzip2_argv;
 }pbzip2_params;
 
+typedef struct aes_param{
+    char* bmark_file_name; int bmark_key_size; int bmark_file_size; int bmark_encrypt; int bmark_loops; int outer_loops;
+}aes_params;
+
+/*
+void *test_workload(void* param1)
+{
+    int check_affinity;
+    uint64_t i;
+    uint64_t  begin = RDTSCP();
+    uint64_t loop_index;
+
+    fiber_change(2, &check_affinity, &loop_index, 47.08, 1);
+    for(i=0;i<loop_index;i++);
+    pbzip2_start(param1);
+
+    fiber_change(1, &check_affinity, &loop_index, 21.3, 1);
+    for(i=0;i<loop_index;i++);
+    aes_params *param = (aes_params*) malloc(sizeof(aes_params));
+    param->bmark_file_name = "large.graph.gz.bz2";
+    param->bmark_key_size = 128;
+    param->bmark_file_size = 50*1024*1024;
+    param->bmark_encrypt = USE_iAES_CBC | USE_ARRAY;
+    param->bmark_loops = 200;
+    param->outer_loops = 10;
+    aes_example_main((void*)param);
+    uint64_t  end = RDTSCP();
+
+    double time = (1.0*(end-begin))/FREQ;
+    printf("Total time of workload1: %f\n",time);
+
+}
+*/
+void *test_workload1(void* param1)
+{
+    int check_affinity;
+    uint64_t i;
+    uint64_t  begin = RDTSCP();
+    uint64_t loop_index;
+
+    fiber_change(2, &check_affinity, &loop_index, 47.08, 0);
+    (void)cblosc_simple_start(param1);
+    uint64_t  end = RDTSCP();
+
+    double time = (1.0*(end-begin))/FREQ;
+    printf("Total time of workload1: %f\n",time);
+
+}
+
+void *test_workload2(void* param1)
+{
+    int check_affinity;
+    uint64_t i;
+    uint64_t  begin = RDTSCP();
+    uint64_t loop_index;
+
+    fiber_change(2, &check_affinity, &loop_index, 47.08, 0);
+    //(void)dedup_start(param1);
+    uint64_t  end = RDTSCP();
+
+    double time = (1.0*(end-begin))/FREQ;
+    printf("Total time of workload1: %f\n",time);
+
+}
+
 // This is a simple echo server using fibers. The main() function opens a blocking
 // listening socket. A new fiber is spawned for each client.
 int main(int argc, char** argv)
@@ -118,9 +203,13 @@ int main(int argc, char** argv)
 
 
     //printf("\n Hello Client -2");
-    int matrix[1][4];
-    matrix[0][0] = matrix[0][1] = matrix[0][2] = matrix[0][3] = 4;
-    fiber_manager_init(12, (int *)matrix, 1, 4);
+    double matrix[5][6];
+    matrix[0][0] = 0.7, matrix[0][1] = 1, matrix[0][2] = 0.8, matrix[0][3] = 1, matrix[0][4] = 0.5, matrix[0][5] = 0.9;
+    matrix[1][0] = 1, matrix[1][1] = 0.7, matrix[1][2] = 1, matrix[1][3] = 0.9, matrix[1][4] = 0.6, matrix[1][5] = 0.8;
+    matrix[2][0] = 0.7, matrix[2][1] = 0.9, matrix[2][2] = 0.8, matrix[2][3] = 1, matrix[2][4] = 1, matrix[2][5] = 0.6;
+    matrix[3][0] = 1, matrix[3][1] = 0.6, matrix[3][2] = 1, matrix[3][3] = 0.5, matrix[3][4] = 0.7, matrix[3][5] = 0.8;
+    matrix[4][0] = 0.6, matrix[4][1] = 0.9, matrix[4][2] = 0.8, matrix[4][3] = 0.7, matrix[4][4] = 1, matrix[4][5] = 1;
+    fiber_manager_init(12, (double *)matrix, 5, 6);
     //printf("\n Hello Client -1");
 
 /*    const char* host = "127.0.0.1";
@@ -142,19 +231,22 @@ int main(int argc, char** argv)
     int i;
     fiber_t *client_fiber[10];
 
-    for(i = 0; i < 9; i++) {
-    int a = 1;
-        client_fiber[i] = fiber_create(10240, &client_function, &a);
-
-	}
     pbzip2_params *param1 = (pbzip2_params*) malloc(sizeof(pbzip2_params));
     param1->pbzip2_argc = argc;
     param1->pbzip2_argv = argv;
     param1->pbzip2_argv[0] = "pbzip2";
-    client_fiber[9] = fiber_create(102400, &pbzip2_start, (void*)param1);
+
+    for(i = 0; i < 1; i++) {
+    int a = 1;
+        client_fiber[i] = fiber_create(10240, &black_scholes, (void*)param1);
+
+	}
+
+    //client_fiber[9] = fiber_create(102400, &pbzip2_start, (void*)param1);
+//    client_fiber[0] = fiber_create(1024000, &cblosc_simple_start, (void*)param1);
     //fiber_do_real_sleep(10, 0);
     //printf("Global count %d\n", counter);
-    for(i = 0; i < 10; i++) {
+    for(i = 0; i < 1; i++) {
         printf("From main: %d join successful\n",i);
         fiber_join(client_fiber[i], NULL);
     }

@@ -3391,7 +3391,7 @@ int pbzip2_start(void* arg)
 	size_t i, j, k;
 	bool switchedMtToSt = false; // switched from multi- to single-thread
 
-	printf("I am in pbzip2_start beginning\n");
+	//printf("I am in pbzip2_start beginning\n");
 	// Initialize error context
 	if (ErrorContext::getInstance() == NULL)
 	{
@@ -3837,7 +3837,7 @@ int pbzip2_start(void* arg)
 
 	// Initialize child threads attributes
 	initChildThreadAttributes();
-	printf("INitialized chile thread attributes\n");
+	//printf("INitialized chile thread attributes\n");
 	// setup signal handling (should be before creating any child thread)
 	sigInFilename = NULL;
 	sigOutFilename = NULL;
@@ -3900,7 +3900,7 @@ int pbzip2_start(void* arg)
 	}
 
 	// create queue
-	numCPU = 4;//Hard coded: TODO: check
+	numCPU = 1;//Hard coded: TODO: check
 	fifo = FifoQueue = queueInit(numCPU);
 
 	//printf("Number of CPUS: %d\n",numCPU);
@@ -4395,7 +4395,7 @@ int pbzip2_start(void* arg)
 				{
 					//ret = pthread_create(&fifo->consumers[i], &ChildThreadAttributes, consumer, fifo);
 					fifo->consumers[i] = fiber_create(PBZIP_STACK_SIZE, consumer, fifo);
-					printf("Creating consumer threads in pbzip2....yayyyyyyyyyyyyyy\n");
+					//printf("Creating consumer threads in pbzip2....yayyyyyyyyyyyyyy\n");
 					ret = 0;
 					if (ret != 0)
 					{
@@ -4585,5 +4585,5 @@ int pbzip2_start(void* arg)
 	if (QuietMode != 1)
 		fprintf(stderr, "\n     Wall Clock: %f seconds\n", timeCalc);
 
-	exit(errLevel);
+	return 0;
 }

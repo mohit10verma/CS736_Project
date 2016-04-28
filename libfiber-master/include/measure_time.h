@@ -1,7 +1,7 @@
 #include <time.h>
 #include <stdint.h>
 
-#define FREQ 3192659000
+#define FREQ 2401000000
 #define NANO_SECONDS_IN_SEC  1000000000
 //rdtscp wrapper
 static inline uint64_t RDTSCP()

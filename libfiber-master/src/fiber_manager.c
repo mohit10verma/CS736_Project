@@ -58,7 +58,7 @@ static int num_threads_per_cpu = 0;
 static pthread_t* fiber_manager_threads = NULL;
 static fiber_manager_t** fiber_managers = NULL;
 static volatile int fiber_shutting_down = 0;
-int **feat_mat = NULL;
+double **feat_mat = NULL;
 static fiber_t* parent_fiber = NULL;
 
 void fiber_destroy(fiber_t* f)
@@ -81,7 +81,6 @@ fiber_manager_t* fiber_manager_create(fiber_scheduler_t* scheduler)
     manager->thread_fiber = fiber_create_from_thread();
     manager->current_fiber = manager->thread_fiber;
     manager->scheduler = scheduler;
-
     if(!manager->thread_fiber) {
         fiber_destroy(manager->thread_fiber);
         free(manager);
@@ -207,6 +206,7 @@ void* fiber_manager_thread_func(void* param)
     if(!manager->maintenance_fiber) {
         manager->maintenance_fiber = manager->thread_fiber;
     }
+    manager->tid = pthread_self();
 
     while(!fiber_shutting_down) {
         //fiber_scheduler_load_balance(manager->scheduler);
@@ -226,7 +226,7 @@ void* fiber_manager_thread_func(void* param)
     return NULL;
 }
 
-int fiber_manager_init(size_t num_threads, int* matrix, int m, int n)
+int fiber_manager_init(size_t num_threads, double* matrix, int m, int n)
 {
     //printf("\nINIT");
     splitstack_disable_block_signals();
@@ -235,14 +235,16 @@ int fiber_manager_init(size_t num_threads, int* matrix, int m, int n)
         errno = EINVAL;
         return FIBER_ERROR;
     }
+
     num_threads_per_cpu = num_threads/sysconf(_SC_NPROCESSORS_ONLN);
-    feat_mat = malloc(m* sizeof(int*));
-    int i, j;
+    int i,j;
+    feat_mat = malloc(m* sizeof(double *));
     for(i = 0; i < m; i++) {
-        feat_mat[i] = malloc(n * sizeof(int));
+        feat_mat[i] = malloc(n * sizeof(double));
         for(j = 0; j < n; j++)
             feat_mat[i][j] = *((matrix+i*n) + j);
     }
+
     const int sched_ret = fiber_scheduler_init(num_threads, num_threads_per_cpu);
     if(!sched_ret) {
         return FIBER_ERROR;
@@ -255,6 +257,7 @@ int fiber_manager_init(size_t num_threads, int* matrix, int m, int n)
     assert(fiber_managers);
 
     fiber_manager_t* const main_manager = fiber_manager_create(fiber_scheduler_for_thread(0));
+    main_manager->affinity =0;
     //printf("%x fiber created for manager 0\n", main_manager->thread_fiber);
     //main_manager->thread_fiber->context.cpuset = 1;
     assert(main_manager);
@@ -289,6 +292,7 @@ int fiber_manager_init(size_t num_threads, int* matrix, int m, int n)
         assert(new_manager);
         new_manager->id = i;
         fiber_managers[i] = new_manager;
+        fiber_managers[i]->affinity =i/num_threads_per_cpu;
     }
 
     pthread_attr_t attr;
@@ -320,7 +324,7 @@ int fiber_manager_init(size_t num_threads, int* matrix, int m, int n)
     if(!fiber_event_init()) {
         return FIBER_ERROR;
     }
-    printf("%x is parent fiber\n", fiber_manager_get()->current_fiber);
+    //printf("%x is parent fiber\n", fiber_manager_get()->current_fiber);
     parent_fiber = fiber_manager_get()->current_fiber;
     fiber_manager_get()->current_fiber->context.cpuset = 1;
 

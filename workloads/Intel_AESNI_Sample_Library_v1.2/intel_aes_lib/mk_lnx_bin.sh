@@ -17,4 +17,5 @@ fi
 #echo got sz= $sz and arch= $arch
 
 
-gcc -m${sz} -O -Iinclude -o bin/aessample${arch} src/aessample.c lib/x${arch}/intel_aes${arch}.a
+#gcc -m${sz} -O -Iinclude -o bin/aessample${arch} src/aessample.c lib/x${arch}/intel_aes${arch}.a
+gcc -m${sz} -Iinclude -o bin/aessample${arch} src/aessample.c lib/x${arch}/intel_aes${arch}.a

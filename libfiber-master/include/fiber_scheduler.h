@@ -38,7 +38,7 @@ void fiber_scheduler_load_balance(fiber_scheduler_t* scheduler);
 
 void fiber_scheduler_stats(fiber_scheduler_t* scheduler, uint64_t* steal_count, uint64_t* failed_steal_count);
 
-void fiber_scheduler_change(struct fiber_manager* manager, size_t index);
+void fiber_scheduler_change(struct fiber_manager* manager, size_t instruction_type, int *affinity, uint64_t *loop_index, double timetaken, int enable);
 
 void schedule_fiber(fiber_t* the_fiber);
 

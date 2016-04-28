@@ -1,6 +1,0 @@
-#include <iostream>
-#include "example.h"
-
-void helloWorld(){
-    cout << "hello from CPP";
-} 
